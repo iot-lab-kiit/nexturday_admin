@@ -1,0 +1,19 @@
+[
+    {
+      "id": "1",
+      "name": "Tech Society",
+      "email": "techsociety@example.com",
+      "contact": "+1234567890",
+      "website": "https://techsociety.com",
+      "events": ["101", "102"]
+    },
+    {
+      "id": "2",
+      "name": "Art Society",
+      "email": "artsociety@example.com",
+      "contact": "+9876543210",
+      "website": "https://artsociety.com",
+      "events": null
+    }
+  ]
+  
