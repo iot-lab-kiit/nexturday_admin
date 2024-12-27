@@ -11,6 +11,7 @@ import { FaPlus } from "react-icons/fa6";
 import { Separator } from "./components/ui/separator";
 import SocietiesTable from "./components/SocietiesTable";
 import EventsTable from "./components/EventsTable";
+import { Card } from "./components/Card";
 
 function App() {
   const [selectedTab, setSelectedTab] = useState<
@@ -84,7 +85,7 @@ function App() {
             <p className="text-gray-500">Select a section from the sidebar.</p>
           </div>
         )}
-        {selectedTab === "societies" && <SocietiesTable />}
+        {selectedTab === "societies" && <Card />}
         {selectedTab === "events" && <EventsTable />}
       </div>
     </div>
