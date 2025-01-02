@@ -11,10 +11,12 @@ import { FaPlus } from "react-icons/fa6";
 import { Separator } from "./components/ui/separator";
 import SocietiesTable from "./components/SocietiesTable";
 import EventsTable from "./components/EventsTable";
+import ProfilePage from "./components/ProfilePage";
+import AddEvent from "./components/AddEvent";
 
 function App() {
   const [selectedTab, setSelectedTab] = useState<
-    "societies" | "events" | "home"
+    "societies" | "events" | "home" | "profile" | "AddEvent"
   >("home");
 
   return (
@@ -65,7 +67,8 @@ function App() {
         </div>
         <Separator />
         <div className="my-4 flex flex-col gap-3 justify-center items-start ml-4">
-          <p>My Profile</p>
+          <p onClick={() => setSelectedTab("profile")} className="cursor-pointer">My Profile</p>
+          <p onClick={() => setSelectedTab("AddEvent")} className="cursor-pointer">Add Event</p>
           <p>Permission</p>
           <p>CH Management</p>
         </div>
@@ -86,6 +89,8 @@ function App() {
         )}
         {selectedTab === "societies" && <SocietiesTable />}
         {selectedTab === "events" && <EventsTable />}
+        {selectedTab === "profile" && <ProfilePage />}
+        {selectedTab === "AddEvent" && <AddEvent />}
       </div>
     </div>
   );
