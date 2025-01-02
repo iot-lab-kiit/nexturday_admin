@@ -13,7 +13,7 @@ interface FormDataType {
   mapUrl?: string; // Optional
   website?: string; // Optional
   email: string;
-  contactNumbers: string;
+  contactNumbers: string[];
   registrationUrl: string;
   isPaidEvent: boolean;
   price?: number; // Optional
@@ -34,7 +34,7 @@ const AddEvent: React.FC = () => {
     mapUrl: "",
     website: "",
     email: "",
-    contactNumbers: "",
+    contactNumbers: [""],
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
@@ -114,6 +114,32 @@ const AddEvent: React.FC = () => {
     setFormData((prev) => ({
       ...prev,
       guidelines: updatedGuidelines,
+    }));
+  };
+
+  const handleAddContactNumber = () => {
+    setFormData((prev) => ({
+      ...prev,
+      contactNumbers: [...prev.contactNumbers, ""],
+    }));
+  };
+
+  const handleContactNumberChange = (index: number, value: string) => {
+    const updatedContacts = [...formData.contactNumbers];
+    updatedContacts[index] = value;
+    setFormData((prev) => ({
+      ...prev,
+      contactNumbers: updatedContacts,
+    }));
+  };
+
+  const handleRemoveContactNumber = (index: number) => {
+    const updatedContacts = formData.contactNumbers.filter(
+      (_, i) => i !== index
+    );
+    setFormData((prev) => ({
+      ...prev,
+      contactNumbers: updatedContacts,
     }));
   };
 
@@ -269,6 +295,8 @@ const AddEvent: React.FC = () => {
               <input
                 type="date"
                 id="fromDate"
+                value={formData.fromDate}
+                onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
               />
             </div>
@@ -282,6 +310,8 @@ const AddEvent: React.FC = () => {
               <input
                 type="date"
                 id="toDate"
+                value={formData.toDate}
+                onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
               />
             </div>
@@ -405,20 +435,40 @@ const AddEvent: React.FC = () => {
             />
           </div>
 
-          {/* Contact Numbers */}
+          {/* Contact Numbers Section */}
           <div className="flex flex-col gap-2">
-            <label
-              className="text-gray-700 text-sm font-bold"
-              htmlFor="contactNumbers"
-            >
+            <label className="text-gray-700 text-sm font-bold">
               Contact Numbers <span className="text-red-500 ml-1">*</span>
             </label>
-            <input
-              type="text"
-              id="contactNumbers"
-              placeholder="Enter contact numbers separated by commas"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-            />
+            {formData.contactNumbers.map((contact, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={contact}
+                  onChange={(e) =>
+                    handleContactNumberChange(index, e.target.value)
+                  }
+                  placeholder={`Contact Number ${index + 1}`}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                />
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveContactNumber(index)}
+                    className="bg-red-500 text-white font-bold py-1 px-3 rounded-lg hover:bg-red-600 focus:outline-none"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={handleAddContactNumber}
+              className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none"
+            >
+              Add Contact Number
+            </button>
           </div>
 
           {/* Registration URL */}
