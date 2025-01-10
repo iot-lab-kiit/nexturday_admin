@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import society from "./Societies";
 
-export function Card() {
+export function SocietyCard() {
   const [active, setActive] = useState<(typeof society)[number] | boolean | null>(
     null
   );

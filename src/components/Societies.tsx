@@ -43,7 +43,7 @@ const society = [
     {
       "description": "CyberVault Society",
       "title": "Securing the Digital World",
-      "src": "./cybarvault.jpg",
+      "src": "./cybervault.jpg",
       "ctaText": "Visit",
       "ctaLink": "https://cybervault.kiit.ac.in/",
       "contact": "9895746123",
