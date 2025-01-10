@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   MdKeyboardArrowDown,
@@ -9,29 +8,24 @@ import { RiShutDownLine } from "react-icons/ri";
 import { IoIosSettings } from "react-icons/io";
 import { GoArrowLeft } from "react-icons/go";
 import { FaPlus } from "react-icons/fa6";
-import { Separator } from "./components/ui/separator";
-import SocietiesTable from "./components/SocietiesTable";
-import EventsTable from "./components/EventsTable";
-import ProfilePage from "./components/ProfilePage";
-import AddEvent from "./components/AddEvent";
+import { Separator } from "./ui/separator";
+// import SocietiesTable from "../components/SocietiesTable";
+// import EventsTable from "../components/EventsTable";
+import { SocietyCard } from "./SocietyCard";
+import { EventCarousel } from "./EventCarousel";
 
-function App() {
+function Home() {
   const [selectedTab, setSelectedTab] = useState<
-    "societies" | "events" | "home" | "profile" | "AddEvent"
+    "societies" | "events" | "home"
   >("home");
 
-import Home from './components/Home'
-
-
-const App = () => {
   return (
-
-    <div className="w-full flex">
+    <div className="w-full flex flex-col md:flex-row">
       {/* Sidebar */}
       <div className="w-1/5 h-screen bg-blue-800 text-white flex flex-col justify-between">
         <div className="w-full h-full">
           <div className="h-[10vh] p-2 mx-2">
-            <div className="flex flex-row items-center justify-between">
+            <div className="flex md:flex-row items-center justify-between">
               <div className="flex flex-row items-center">
                 Admin
                 <MdKeyboardArrowDown className="mt-1" />
@@ -73,8 +67,7 @@ const App = () => {
         </div>
         <Separator />
         <div className="my-4 flex flex-col gap-3 justify-center items-start ml-4">
-          <p onClick={() => setSelectedTab("profile")} className="cursor-pointer">My Profile</p>
-          <p onClick={() => setSelectedTab("AddEvent")} className="cursor-pointer">Add Event</p>
+          <p>My Profile</p>
           <p>Permission</p>
           <p>CH Management</p>
         </div>
@@ -93,17 +86,12 @@ const App = () => {
             <p className="text-gray-500">Select a section from the sidebar.</p>
           </div>
         )}
-        {selectedTab === "societies" && <SocietiesTable />}
-        {selectedTab === "events" && <EventsTable />}
-        {selectedTab === "profile" && <ProfilePage />}
-        {selectedTab === "AddEvent" && <AddEvent />}
+        {selectedTab === "societies" && <SocietyCard />}
+        {/* {selectedTab === "events" && <EventsTable />} */}
+        {selectedTab === "events" && <EventCarousel />}
       </div>
     </div>
   );
-
-  
-  )
-
 }
 
-export default App
+export default Home;

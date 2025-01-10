@@ -1,19 +1,42 @@
 [
-    {
-      "id": "1",
-      "name": "Tech Society",
-      "email": "techsociety@example.com",
-      "contact": "+1234567890",
-      "website": "https://techsociety.com",
-      "events": ["101", "102"]
-    },
-    {
-      "id": "2",
-      "name": "Art Society",
-      "email": "artsociety@example.com",
-      "contact": "+9876543210",
-      "website": "https://artsociety.com",
-      "events": null
-    }
-  ]
-  
+  {
+    "description": "Internet of Things Lab",
+    "title": "IoT Lab",
+    "src": "https://iotkiit.in/_next/image?url=%2Fimages%2Flogo_small.webp&w=828&q=75",
+    "ctaText": "Visit",
+    "ctaLink": "https://iotkiit.in/",
+    "content": "The IoT Lab focuses on bridging the gap between physical devices and the digital world. With hands-on workshops, projects, and events, the lab fosters innovation in the field of the Internet of Things, providing students opportunities to develop cutting-edge solutions for real-world challenges."
+  },
+  {
+    "description": "GeeksforGeeks Student Chapter",
+    "title": "GeeksforGeeks",
+    "src": "https://geeksforgeeks.org/logo.png",
+    "ctaText": "Explore",
+    "ctaLink": "https://geeksforgeeks.org/",
+    "content": "The GeeksforGeeks Student Chapter at KIIT is dedicated to enhancing coding skills and technical knowledge among students. With regular coding contests, workshops, and peer learning sessions, the chapter provides a platform for students to excel in programming and problem-solving."
+  },
+  {
+    "description": "CyberVault Club",
+    "title": "CyberVault",
+    "src": "https://cybervault.in/logo.png",
+    "ctaText": "Join",
+    "ctaLink": "https://cybervault.in/",
+    "content": "CyberVault is a community for cybersecurity enthusiasts, offering workshops, CTF competitions, and discussions on the latest security trends. The club aims to create awareness about ethical hacking, data privacy, and securing digital footprints."
+  },
+  {
+    "description": "Microsoft Learn Student Ambassadors",
+    "title": "MLSA",
+    "src": "https://mlsa.microsoft.com/logo.png",
+    "ctaText": "Discover",
+    "ctaLink": "https://studentambassadors.microsoft.com/",
+    "content": "The MLSA program is a global initiative by Microsoft to empower students with technical skills and leadership opportunities. At KIIT, the MLSA chapter conducts workshops, hackathons, and seminars on Microsoft's latest technologies and tools."
+  },
+  {
+    "description": "Google Developer Group Bhubaneswar",
+    "title": "Google Developer Group",
+    "src": "https://developers.google.com/community/gdg/images/logo.png",
+    "ctaText": "Learn More",
+    "ctaLink": "https://gdg.community.dev/gdg-bhubaneswar/",
+    "content": "GDG Bhubaneswar is a vibrant community of developers passionate about Google technologies. The group organizes meetups, code labs, and conferences, fostering collaboration and innovation in areas such as Android, Web Development, and Machine Learning."
+  }
+]

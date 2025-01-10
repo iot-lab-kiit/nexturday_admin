@@ -6,8 +6,7 @@
     "year": 1,
     "rollno": "2405458",
     "registeredDate": "2024-12-01",
-    "payment": "success",
-    "eventId": "101"
+    "payment": "success"
   },
   {
     "id": "p2",
@@ -16,8 +15,7 @@
     "year": 2,
     "rollno": "2305449",
     "registeredDate": "2024-12-02",
-    "payment": "success",
-    "eventId": "101"
+    "payment": "success"
   },
   {
     "id": "p3",
@@ -26,8 +24,7 @@
     "year": 3,
     "rollno": "2205458",
     "registeredDate": "2024-12-05",
-    "payment": "pending",
-    "eventId": "101"
+    "payment": "pending"
   },
   {
     "id": "p4",
@@ -36,8 +33,7 @@
     "year": 1,
     "rollno": "2405459",
     "registeredDate": "2024-12-07",
-    "payment": "success",
-    "eventId": "102"
+    "payment": "success"
   },
   {
     "id": "p5",
@@ -46,8 +42,7 @@
     "year": 2,
     "rollno": "2305460",
     "registeredDate": "2024-12-08",
-    "payment": "success",
-    "eventId": "102"
+    "payment": "success"
   },
   {
     "id": "p6",
@@ -56,8 +51,7 @@
     "year": 3,
     "rollno": "2205460",
     "registeredDate": "2024-12-10",
-    "payment": "success",
-    "eventId": "102"
+    "payment": "success"
   },
   {
     "id": "p7",
@@ -66,8 +60,7 @@
     "year": 1,
     "rollno": "2405461",
     "registeredDate": "2024-12-12",
-    "payment": "pending",
-    "eventId": "103"
+    "payment": "pending"
   },
   {
     "id": "p8",
@@ -76,8 +69,7 @@
     "year": 2,
     "rollno": "2305462",
     "registeredDate": "2024-12-14",
-    "payment": "success",
-    "eventId": "103"
+    "payment": "success"
   },
   {
     "id": "p9",
@@ -86,8 +78,7 @@
     "year": 3,
     "rollno": "2205462",
     "registeredDate": "2024-12-15",
-    "payment": "success",
-    "eventId": "103"
+    "payment": "success"
   },
   {
     "id": "p10",
@@ -96,8 +87,7 @@
     "year": 1,
     "rollno": "2405463",
     "registeredDate": "2024-12-16",
-    "payment": "pending",
-    "eventId": "104"
+    "payment": "pending"
   },
   {
     "id": "p11",
@@ -106,8 +96,7 @@
     "year": 2,
     "rollno": "2305464",
     "registeredDate": "2024-12-17",
-    "payment": "success",
-    "eventId": "104"
+    "payment": "success"
   },
   {
     "id": "p12",
@@ -116,8 +105,7 @@
     "year": 3,
     "rollno": "2205463",
     "registeredDate": "2024-12-19",
-    "payment": "success",
-    "eventId": "104"
+    "payment": "success"
   },
   {
     "id": "p13",
@@ -126,8 +114,7 @@
     "year": 1,
     "rollno": "2405464",
     "registeredDate": "2024-12-20",
-    "payment": "success",
-    "eventId": "101"
+    "payment": "success"
   },
   {
     "id": "p14",
@@ -136,8 +123,7 @@
     "year": 2,
     "rollno": "2305465",
     "registeredDate": "2024-12-22",
-    "payment": "pending",
-    "eventId": "101"
+    "payment": "pending"
   },
   {
     "id": "p15",
@@ -146,8 +132,7 @@
     "year": 3,
     "rollno": "2205464",
     "registeredDate": "2024-12-23",
-    "payment": "success",
-    "eventId": "102"
+    "payment": "success"
   },
   {
     "id": "p16",
@@ -156,8 +141,7 @@
     "year": 1,
     "rollno": "2405465",
     "registeredDate": "2024-12-25",
-    "payment": "success",
-    "eventId": "103"
+    "payment": "success"
   },
   {
     "id": "p17",
@@ -166,8 +150,7 @@
     "year": 2,
     "rollno": "2305466",
     "registeredDate": "2024-12-26",
-    "payment": "pending",
-    "eventId": "103"
+    "payment": "pending"
   },
   {
     "id": "p18",
@@ -176,8 +159,7 @@
     "year": 3,
     "rollno": "2205465",
     "registeredDate": "2024-12-28",
-    "payment": "success",
-    "eventId": "104"
+    "payment": "success"
   },
   {
     "id": "p19",
@@ -186,8 +168,7 @@
     "year": 1,
     "rollno": "2405466",
     "registeredDate": "2024-12-30",
-    "payment": "pending",
-    "eventId": "104"
+    "payment": "pending"
   },
   {
     "id": "p20",
@@ -196,9 +177,6 @@
     "year": 2,
     "rollno": "2305467",
     "registeredDate": "2024-12-31",
-    "payment": "success",
-    "eventId": "104"
+    "payment": "success"
   }
 ]
-
- 
