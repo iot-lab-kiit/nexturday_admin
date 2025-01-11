@@ -29,7 +29,7 @@ function Login() {
   const login: SubmitHandler<FormData> = (data) => {
     setClicked(true);
     console.log(data);
-    signup(data.email, data.password)
+    signin(data.email, data.password)
   };
 
   return (

@@ -23,7 +23,7 @@ function Home() {
     <div className="w-full flex flex-col md:flex-row relative">
       {/* Sidebar */}
       <div
-        className={`fixed md:static w-4/5 md:w-1/5 h-screen bg-blue-800 text-white flex flex-col justify-between z-[2000] transition-transform duration-300 ${
+        className={`fixed md:static w-4/5 md:w-1/5 h-screen bg-blue-800 text-white flex flex-col justify-between transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}
       >
