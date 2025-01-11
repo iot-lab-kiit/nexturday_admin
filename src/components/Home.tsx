@@ -18,7 +18,7 @@ function Home() {
   const [selectedTab, setSelectedTab] = useState<
     "societies" | "events" | "home"
   >("home");
-
+  
   return (
     <div className="w-full flex flex-col md:flex-row">
       {/* Sidebar */}
