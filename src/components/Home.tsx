@@ -9,8 +9,7 @@ import { IoIosSettings } from "react-icons/io";
 import { GoArrowLeft } from "react-icons/go";
 import { FaPlus } from "react-icons/fa6";
 import { Separator } from "./ui/separator";
-// import SocietiesTable from "../components/SocietiesTable";
-// import EventsTable from "../components/EventsTable";
+import { Menu, X } from "lucide-react"; 
 import { SocietyCard } from "./SocietyCard";
 import { EventCarousel } from "./EventCarousel";
 
@@ -18,12 +17,24 @@ function Home() {
   const [selectedTab, setSelectedTab] = useState<
     "societies" | "events" | "home"
   >("home");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="w-full flex flex-col md:flex-row">
+    <div className="w-full flex flex-col md:flex-row relative">
       {/* Sidebar */}
-      <div className="w-1/5 h-screen bg-blue-800 text-white flex flex-col justify-between">
+      <div
+        className={`fixed md:static w-4/5 md:w-1/5 h-screen bg-blue-800 text-white flex flex-col justify-between transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
+      >
         <div className="w-full h-full">
+          <div className="flex justify-end md:hidden p-2">
+            <X
+              className="text-white text-2xl cursor-pointer"
+              onClick={() => setSidebarOpen(false)}
+            />
+          </div>
+
           <div className="h-[10vh] p-2 mx-2">
             <div className="flex md:flex-row items-center justify-between">
               <div className="flex flex-row items-center">
@@ -78,8 +89,15 @@ function Home() {
         </div>
       </div>
 
+      <div className="md:hidden absolute top-4 left-4">
+        <Menu
+          className="text-blue-800 text-2xl cursor-pointer"
+          onClick={() => setSidebarOpen(true)}
+        />
+      </div>
+
       {/* Main Content */}
-      <div className="w-4/5 h-screen p-4 bg-gray-50 overflow-auto">
+      <div className="w-full md:w-4/5 h-screen p-4 bg-gray-50 overflow-auto">
         {selectedTab === "home" && (
           <div className="flex flex-col justify-center items-center h-full">
             <h1 className="text-3xl font-bold text-gray-700">Welcome Admin</h1>
@@ -87,7 +105,6 @@ function Home() {
           </div>
         )}
         {selectedTab === "societies" && <SocietyCard />}
-        {/* {selectedTab === "events" && <EventsTable />} */}
         {selectedTab === "events" && <EventCarousel />}
       </div>
     </div>

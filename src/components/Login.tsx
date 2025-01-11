@@ -3,6 +3,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import {signup, signin} from "../lib/auth";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -28,6 +29,7 @@ function Login() {
   const login: SubmitHandler<FormData> = (data) => {
     setClicked(true);
     console.log(data);
+    signin(data.email, data.password)
   };
 
   return (
@@ -124,14 +126,14 @@ function Login() {
                 type="submit"
                 className="w-full flex items-center justify-center bg-blue-500 text-white p-2 rounded-md active:bg-blue-600 active:scale-95 transition-all"
                 disabled={clicked}
+                // onClick={()=>{
+                //   handleSignIn()
+                // }}
               >
                 {clicked ? (
-                  <Icon
-                    icon="svg-spinners:90-ring-with-bg"
-                    width="24"
-                    height="24"
-                    style={{ color: "#fff" }}
-                  />
+                  <div>
+                    Logging in
+                  </div>
                 ) : (
                   <span className="flex justify-center items-center">
                     Next
