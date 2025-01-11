@@ -10,7 +10,7 @@ export function EventCarousel() {
 
   return (
     <div className="w-full h-full">
-      <h2 className="max-w-7xl pl-4 mx-auto text-3xl font-bold text-neutral-800 dark:text-neutral-200 ">
+      <h2 className="max-w-7xl pl-4 mx-auto md:mt-4 mt-8 text-3xl font-bold text-neutral-800 dark:text-neutral-200 ">
         Upcoming Events
       </h2>
       <Carousel items={cards} />
