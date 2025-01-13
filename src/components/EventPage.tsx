@@ -4,7 +4,9 @@ import axios from "axios";
 
 
 axios.defaults.baseURL = "https://nexterday.iotkiit.in/";
-const token = import.meta.env.VITE_SOCIETY_TOKEN;
+// const token = import.meta.env.VITE_SOCIETY_TOKEN;
+const token = sessionStorage.getItem("societyToken");
+
 axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
 
 
@@ -55,7 +57,7 @@ const EventPage = () => {
     const getEvents = async () => {
       try {
         const response = await axios.get(
-          "https://nexterday.iotkiit.in/api/events?page=1&field=createdAt&direction=desc"
+          `${import.meta.env.VITE_BASE_URL}/api/events?page=1&field=createdAt&direction=desc`
         );
         console.log(response.data.data.data);
         setEvents(response.data.data.data);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MdKeyboardArrowDown,
@@ -10,25 +10,42 @@ import { IoIosSettings } from "react-icons/io";
 import { FaPlus } from "react-icons/fa6";
 import { Separator } from "./ui/separator";
 import { Menu, UserRoundPen, X } from "lucide-react";
-import SocietyCard from "./SocietyCard";
+import SocietyPage from "./SocietyPage";
 import EventPage from "./EventPage";
+import axios from "axios";
 
 function Home() {
-  const [selectedTab, setSelectedTab] = useState<
-    "societies" | "events" | "home"
-  >("home");
+  const [selectedTab, setSelectedTab] = useState<"societies" | "events" | "home">("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isLoggedin, setisLoggedin] = useState(false);
+  const [isLoggedin, setIsLoggedin] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
-  //get user from session storage
+  // Get user from session storage
   const user = sessionStorage.getItem("user");
-
-  if(user){
-    setisLoggedin(true);
+  if (user) {
+    setIsLoggedin(true);
   }
 
+  const token = sessionStorage.getItem("societyToken");
+  axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/api/society`
+        );
+        setUserEmail(response.data.data.email);
+      } catch (error) {
+        console.error("Error fetching user email:", error);
+        setUserEmail(null);
+      }
+    };
+
+    fetchUserEmail();
+  }, []);
 
   return (
     <div className="w-full flex flex-col md:flex-row relative">
@@ -57,7 +74,7 @@ function Home() {
               </div>
             </div>
             <p className="text-xs font-thin text-gray-400">
-              admin: admin@email.com
+              admin: {userEmail || "Loading..."}
             </p>
           </div>
           <Separator />
@@ -78,18 +95,15 @@ function Home() {
             </div>
           </div>
           <Separator />
-          <div className="text-sm border-[1px] rounded-full m-2 py-1 px-2 w-fit mx-auto flex flex-row gap-2 items-center justify-center mt-4 text-blue-400">
+          <div onClick={()=>navigate('/add-event')} className="text-sm border-[1px] rounded-full m-2 py-1 px-2 w-fit mx-auto flex flex-row gap-2 items-center justify-center mt-4 text-blue-400 cursor-pointer hover:text-white">
             <FaPlus className="text-xl" />
-            <p>Add Category</p>
+            <p>Add Events</p>
           </div>
         </div>
         <Separator />
         <div className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
-        <UserRoundPen className="text-sm"/>
-          <p
-            onClick={() => navigate("/profile")}
-            className="py-1 mx-auto"
-          >
+          <UserRoundPen className="text-sm" />
+          <p onClick={() => navigate("/profile")} className="py-1 mx-auto">
             My Profile
           </p>
         </div>
@@ -98,10 +112,11 @@ function Home() {
           <div
             onClick={() => {
               sessionStorage.removeItem("user");
-              setisLoggedin(false);
+              setIsLoggedin(false);
               navigate("/login");
             }}
-          className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
+            className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
+          >
             <RiShutDownLine />
             <p>Logout</p>
           </div>
@@ -131,7 +146,7 @@ function Home() {
             <p className="text-gray-500">Select a section from the sidebar.</p>
           </div>
         )}
-        {selectedTab === "societies" && <SocietyCard />}
+        {selectedTab === "societies" && <SocietyPage />}
         {selectedTab === "events" && <EventPage />}
       </div>
     </div>

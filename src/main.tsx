@@ -6,6 +6,7 @@ import App from "./App.tsx";
 import Login from "./components/Login.tsx";
 import ChangePassword from "./components/ChangePassword.tsx";
 import ProfilePage from "./components/ProfilePage.tsx";
+import AddEvent from "./components/AddEvent.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/update-profile" element={<ProfilePage />} />
+        <Route path="/add-event" element={<AddEvent />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>
