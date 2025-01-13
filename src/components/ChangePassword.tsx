@@ -1,11 +1,10 @@
 import { Icon } from "@iconify/react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-
-
-
+import axios from "axios";
+import { useNavigate } from "react-router";
 
 const schema = z
   .object({
@@ -44,9 +43,35 @@ function ChangePassword() {
     resolver: zodResolver(schema),
   });
 
-  const login: SubmitHandler<FormData> = (data) => {
+  const navigate = useNavigate();
+
+  const updateSocietyPassword = async (data: FormData) => {
     setClicked(true);
-    console.log(data);
+    try {
+      const response = await axios.patch(
+        `${import.meta.env.VITE_BASE_URL}/api/society`,
+        { password: data.password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+          },
+        }
+      );
+      console.log(response);
+
+      if (response.status === 200) {
+        console.log("Password updated successfully");
+      } else {
+        console.error("Error updating password");
+      }
+
+      if (response.data.success == true) {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+    }
   };
 
   return (
@@ -57,8 +82,11 @@ function ChangePassword() {
             <h1 className="font-bold text-3xl pb-2 leading-8">
               Set your new password
             </h1>
-            
-            <form onSubmit={handleSubmit(login)} className="py-9 font-semibold">
+
+            <form
+              onSubmit={handleSubmit(updateSocietyPassword)}
+              className="py-9 font-semibold"
+            >
               <div className="flex flex-col gap-6 pb-5">
                 <div className="">
                   <div className="flex gap-2">
@@ -68,7 +96,7 @@ function ChangePassword() {
                       placeholder="Password"
                       className="w-full border border-t-0 border-l-0 border-r-0 pb-2 outline-none focus:border-b-gray-400 transition-all"
                     />
-                    <button
+                    <div
                       className="flex justify-center items-center"
                       onClick={() => {
                         setShowPassword(!showPassword);
@@ -89,7 +117,7 @@ function ChangePassword() {
                           style={{ color: "#9ca3af" }}
                         />
                       )}
-                    </button>
+                    </div>
                   </div>
                   {errors.password?.message && (
                     <p className="pr-10 font-normal text-sm text-red-500 pt-2 text-justify">
@@ -105,7 +133,7 @@ function ChangePassword() {
                       placeholder="Retype password"
                       className="w-full border border-t-0 border-l-0 border-r-0 pb-2 outline-none focus:border-b-gray-400 transition-all"
                     />
-                    <button
+                    <div
                       className="flex justify-center items-center"
                       onClick={() => {
                         setShowRetypedPassword(!showRetypedPassword);
@@ -126,7 +154,7 @@ function ChangePassword() {
                           style={{ color: "#9ca3af" }}
                         />
                       )}
-                    </button>
+                    </div>
                   </div>
                   {errors.retypedPassword?.message && (
                     <p className="font-normal text-sm text-red-500 pt-2">
