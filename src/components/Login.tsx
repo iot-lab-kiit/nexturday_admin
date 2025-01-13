@@ -3,9 +3,9 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-// import { signup, signin } from "../lib/auth";
 import axios from "axios";
 import { useNavigate } from "react-router";
+
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -35,6 +35,7 @@ function Login() {
     setClicked(true);
     setErrorMessage("");
     console.log(data);
+
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/auth/society/login`,
@@ -63,6 +64,8 @@ function Login() {
       setClicked(false);
     }
     // signin(data.email, data.password);
+
+   
   };
 
   // const loginSociety = async (email, password) => {

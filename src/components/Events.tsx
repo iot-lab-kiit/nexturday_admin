@@ -81,7 +81,7 @@ const events = [
       description: "Collaborate, innovate, and build with Google technologies.",
       organizer: "Google Developer Group KIIT",
       title: "Building Solutions Together",
-      src: "./gdg.jpg",
+      src: "./gdg-2.jpg",
       ctaText: "Visit GDG",
       ctaLink: "https://developers.google.com/community/gdsc",
       contact: "9895746049",
