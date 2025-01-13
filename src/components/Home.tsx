@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MdKeyboardArrowDown,
   MdGroups,
@@ -6,24 +7,26 @@ import {
 } from "react-icons/md";
 import { RiShutDownLine } from "react-icons/ri";
 import { IoIosSettings } from "react-icons/io";
-import { GoArrowLeft } from "react-icons/go";
 import { FaPlus } from "react-icons/fa6";
 import { Separator } from "./ui/separator";
-import { Menu, X } from "lucide-react"; 
+import { Menu, UserRoundPen, X } from "lucide-react";
 import { SocietyCard } from "./SocietyCard";
-import { EventCarousel } from "./EventCarousel";
+import ReactCarousel from "./ReactCarousel";
 
 function Home() {
   const [selectedTab, setSelectedTab] = useState<
     "societies" | "events" | "home"
   >("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggedin, setisLoggedin] = useState(false);
+
+  const navigate = useNavigate();
 
   return (
     <div className="w-full flex flex-col md:flex-row relative">
       {/* Sidebar */}
       <div
-        className={`fixed md:static w-4/5 md:w-1/5 h-screen bg-blue-800 text-white flex flex-col justify-between transition-transform duration-300 ${
+        className={`z-20 fixed md:static w-4/5 md:w-1/5 h-screen bg-blue-800 text-white flex flex-col justify-between transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}
       >
@@ -53,14 +56,14 @@ function Home() {
           <div className="w-full h-[15vh] p-2 mb-2">
             <div
               onClick={() => setSelectedTab("societies")}
-              className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:bg-blue-400 cursor-pointer"
+              className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
             >
               <MdGroups />
               <p>Societies</p>
             </div>
             <div
               onClick={() => setSelectedTab("events")}
-              className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:bg-blue-400 cursor-pointer"
+              className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
             >
               <MdEventAvailable />
               <p>Events</p>
@@ -72,21 +75,31 @@ function Home() {
             <p>Add Category</p>
           </div>
         </div>
-        <div className="flex flex-row justify-start items-center gap-2 my-4 ml-4">
-          <GoArrowLeft className="text-xl text-blue-400" />
-          <p>Back to portal</p>
+        <Separator />
+        <div className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
+        <UserRoundPen className="text-sm"/>
+          <p
+            onClick={() => navigate("/profile")}
+            className="py-1 mx-auto"
+          >
+            My Profile
+          </p>
         </div>
         <Separator />
-        <div className="my-4 flex flex-col gap-3 justify-center items-start ml-4">
-          <p>My Profile</p>
-          <p>Permission</p>
-          <p>CH Management</p>
-        </div>
-        <Separator />
-        <div className="flex flex-row gap-3 justify-start items-center my-4 ml-4 text-gray-500">
-          <RiShutDownLine />
-          <p>Logout</p>
-        </div>
+        {isLoggedin ? (
+          <div className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
+            <RiShutDownLine />
+            <p>Logout</p>
+          </div>
+        ) : (
+          <div
+            onClick={() => navigate("/login")}
+            className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
+          >
+            <RiShutDownLine />
+            <p>Login</p>
+          </div>
+        )}
       </div>
 
       <div className="md:hidden absolute top-4 left-4">
@@ -105,7 +118,7 @@ function Home() {
           </div>
         )}
         {selectedTab === "societies" && <SocietyCard />}
-        {selectedTab === "events" && <EventCarousel />}
+        {selectedTab === "events" && <ReactCarousel />}
       </div>
     </div>
   );
