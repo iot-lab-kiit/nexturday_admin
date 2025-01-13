@@ -3,23 +3,18 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-// import { signup, signin } from "../lib/auth";
+import { signup, signin } from "../lib/auth";
 import axios from "axios";
-import { useNavigate } from "react-router";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string()
-  .min(8, { message: "Password must be at least 8 characters long" }),
 });
 
 type FormData = z.infer<typeof schema>;
 
-function Login() {
+function ForgotPassword() {
   const [clicked, setClicked] = useState<boolean>(false);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-
-  const navigate=useNavigate();
+  // const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const {
     register,
@@ -29,59 +24,21 @@ function Login() {
     resolver: zodResolver(schema),
   });
 
-  const login: SubmitHandler<FormData> = async (data) => {
+  const updatePassword: SubmitHandler<FormData> = async (data) => {
+    const baseUrl = "";
+    const res = {
+      email: data.email,
+    };
+    try {
+      const response = await axios.patch(`${baseUrl}/api/society`, res);
+      // if(response)
+    } catch (error) {
+      console.log(error);
+    }
+    // const response = await axios.patch(`${baseUrl}/api/society`, res);
     setClicked(true);
     console.log(data);
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/api/auth/society/login`,
-        {
-          email: data.email,
-          password: data.password,
-        }
-      );
-      console.log(response.data);
-
-      if (response.status === 201) {
-        console.log("Login successful");
-
-        const token = response.data.data.accessToken;
-        sessionStorage.setItem("societyToken", token);
-      } else {
-        console.error("Error logging in");
-      }
-      if(response.data.firstTime==true){
-        navigate("/change-password");
-      }
-    } catch (error) {
-      console.error("Error logging in:", error);
-    }
-    // signin(data.email, data.password);
   };
-
-  // const loginSociety = async (email, password) => {
-  //   try {
-  //     const response = await axios.post(
-  //       `${process.env.REACT_APP_API_URL}/api/auth/society/login`,
-  //       {
-  //         email,
-  //         password,
-  //       }
-  //     );
-
-  //     if (response.status === 201) {
-  //       console.log("Login successful");
-  //       // Handle the response data here
-  //       const token = response.data.data.accessToken;
-  //       // Store the token in local storage or a secure storage mechanism
-  //       localStorage.setItem("societyToken", token);
-  //     } else {
-  //       console.error("Error logging in");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error logging in:", error);
-  //   }
-  // };
 
   return (
     <>
@@ -89,12 +46,12 @@ function Login() {
         <div className="md:w-[55%]">
           <div className="p-6 md:min-w-80 md:max-w-[600px] m-auto">
             <h1 className="font-bold text-3xl pb-2 leading-8">
-              Login to your account
+              Forgot Password?
             </h1>
-            {/* <p className="leading-5">
-              Continue tracking your progress after logging in to your account
+            <p className="leading-5">
+              No worries, we'll send you reset instructions.
             </p>
-            <div className="py-9">
+            {/* <div className="py-9">
               <button className="w-full border rounded-md p-2 font-semibold flex justify-center items-center gap-3 active:scale-95 transition-all">
                 <Icon icon="devicon:google" width="15" height="15" />
                 Login with Google
@@ -105,7 +62,7 @@ function Login() {
               <div className="px-2">or</div>
               <hr className="w-full" />
             </div> */}
-            <form onSubmit={handleSubmit(login)} className="py-9 font-semibold">
+            <form onSubmit={handleSubmit(updatePassword)} className="py-9 font-semibold">
               <div className="flex flex-col gap-6 pb-5">
                 <div>
                   <input
@@ -117,43 +74,6 @@ function Login() {
                   {errors.email?.message && (
                     <p className="font-normal text-sm text-red-500 pt-2">
                       {errors.email.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <div className="flex gap-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      {...register("password")}
-                      placeholder="Password"
-                      className="w-full border border-t-0 border-l-0 border-r-0 pb-2 outline-none focus:border-b-gray-400 transition-all"
-                    />
-                    <div
-                      className="flex justify-center items-center"
-                      onClick={() => {
-                        setShowPassword(!showPassword);
-                      }}
-                    >
-                      {!showPassword ? (
-                        <Icon
-                          icon="mage:eye"
-                          width="22"
-                          height="22"
-                          style={{ color: "#9ca3af" }}
-                        />
-                      ) : (
-                        <Icon
-                          icon="mage:eye-off"
-                          width="22"
-                          height="22"
-                          style={{ color: "#9ca3af" }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  {errors.password?.message && (
-                    <p className="font-normal text-sm text-red-500 pt-2">
-                      {errors.password.message}
                     </p>
                   )}
                 </div>
@@ -212,4 +132,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default ForgotPassword;

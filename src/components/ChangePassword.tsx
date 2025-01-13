@@ -1,11 +1,10 @@
 import { Icon } from "@iconify/react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-
-
-
+import axios from "axios";
+import { useNavigate } from "react-router";
 
 const schema = z
   .object({
@@ -44,9 +43,33 @@ function ChangePassword() {
     resolver: zodResolver(schema),
   });
 
-  const login: SubmitHandler<FormData> = (data) => {
-    setClicked(true);
-    console.log(data);
+  const navigate = useNavigate();
+
+  const updateSocietyPassword = async (data: FormData) => {
+    try {
+      const response = await axios.patch(
+        `${import.meta.env.VITE_BASE_URL}/api/society`,
+        { password: data.password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        console.log("Password updated successfully");
+      } else {
+        console.error("Error updating password");
+      }
+
+      if (response.data.success == true) {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+    }
   };
 
   return (
@@ -57,8 +80,11 @@ function ChangePassword() {
             <h1 className="font-bold text-3xl pb-2 leading-8">
               Set your new password
             </h1>
-            
-            <form onSubmit={handleSubmit(login)} className="py-9 font-semibold">
+
+            <form
+              onSubmit={handleSubmit(updateSocietyPassword)}
+              className="py-9 font-semibold"
+            >
               <div className="flex flex-col gap-6 pb-5">
                 <div className="">
                   <div className="flex gap-2">
