@@ -46,6 +46,7 @@ function ChangePassword() {
   const navigate = useNavigate();
 
   const updateSocietyPassword = async (data: FormData) => {
+    setClicked(true);
     try {
       const response = await axios.patch(
         `${import.meta.env.VITE_BASE_URL}/api/society`,
@@ -57,6 +58,7 @@ function ChangePassword() {
           },
         }
       );
+      console.log(response);
 
       if (response.status === 200) {
         console.log("Password updated successfully");
@@ -94,7 +96,7 @@ function ChangePassword() {
                       placeholder="Password"
                       className="w-full border border-t-0 border-l-0 border-r-0 pb-2 outline-none focus:border-b-gray-400 transition-all"
                     />
-                    <button
+                    <div
                       className="flex justify-center items-center"
                       onClick={() => {
                         setShowPassword(!showPassword);
@@ -115,7 +117,7 @@ function ChangePassword() {
                           style={{ color: "#9ca3af" }}
                         />
                       )}
-                    </button>
+                    </div>
                   </div>
                   {errors.password?.message && (
                     <p className="pr-10 font-normal text-sm text-red-500 pt-2 text-justify">
@@ -131,7 +133,7 @@ function ChangePassword() {
                       placeholder="Retype password"
                       className="w-full border border-t-0 border-l-0 border-r-0 pb-2 outline-none focus:border-b-gray-400 transition-all"
                     />
-                    <button
+                    <div
                       className="flex justify-center items-center"
                       onClick={() => {
                         setShowRetypedPassword(!showRetypedPassword);
@@ -152,7 +154,7 @@ function ChangePassword() {
                           style={{ color: "#9ca3af" }}
                         />
                       )}
-                    </button>
+                    </div>
                   </div>
                   {errors.retypedPassword?.message && (
                     <p className="font-normal text-sm text-red-500 pt-2">

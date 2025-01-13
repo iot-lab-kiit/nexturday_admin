@@ -9,8 +9,9 @@ import { useNavigate } from "react-router";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string()
-  .min(8, { message: "Password must be at least 8 characters long" }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters long" }),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -18,8 +19,9 @@ type FormData = z.infer<typeof schema>;
 function Login() {
   const [clicked, setClicked] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -31,6 +33,7 @@ function Login() {
 
   const login: SubmitHandler<FormData> = async (data) => {
     setClicked(true);
+    setErrorMessage("");
     console.log(data);
     try {
       const response = await axios.post(
@@ -49,12 +52,15 @@ function Login() {
         sessionStorage.setItem("societyToken", token);
       } else {
         console.error("Error logging in");
+        setErrorMessage("Some error occured. Try again.");
+        setClicked(false);
       }
-      if(response.data.firstTime==true){
-        navigate("/change-password");
-      }
+
+      navigate("/update-profile");
     } catch (error) {
       console.error("Error logging in:", error);
+      setErrorMessage("Some error occured. Try again.");
+      setClicked(false);
     }
     // signin(data.email, data.password);
   };
@@ -195,6 +201,9 @@ function Login() {
                   </span>
                 )}
               </button>
+              <div className="text-red-500 m-auto w-fit pt-3">
+                {errorMessage}
+              </div>
             </form>
             {/* <p className="font-semibold">
               Dont have an account?{" "}
