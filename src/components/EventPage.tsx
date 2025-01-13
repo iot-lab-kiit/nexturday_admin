@@ -1,32 +1,13 @@
 import { useState, useEffect } from "react";
-import Carousel from "react-multi-carousel";
-import "react-multi-carousel/lib/styles.css";
 import EventsTable from "./EventsTable";
 import axios from "axios";
 
 
 axios.defaults.baseURL = "https://nexterday.iotkiit.in/";
-const token =
-  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjQwZDg4ZGQ1NWQxYjAwZDg0ZWU4MWQwYjk2M2RlNGNkOGM0ZmFjM2UiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbmV4dGVyZGF5ZXZlbnRzLTJkOTllIiwiYXVkIjoibmV4dGVyZGF5ZXZlbnRzLTJkOTllIiwiYXV0aF90aW1lIjoxNzM2NzY2ODM1LCJ1c2VyX2lkIjoiY1hXdmtqQXpoZVI3MDJsbzI5UW1sczc5QW90MiIsInN1YiI6ImNYV3ZrakF6aGVSNzAybG8yOVFtbHM3OUFvdDIiLCJpYXQiOjE3MzY3NjY4MzUsImV4cCI6MTczNjc3MDQzNSwiZW1haWwiOiIyMzA1NDU4QGtpaXQuYWMuaW4iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsiMjMwNTQ1OEBraWl0LmFjLmluIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.kMC8VYTooUyFoyDNm17Vxo79yOroJ7L2rEgj32jtRdhtG0t5llQl_tqhMJL39G9T-t10bffcoCaNkNnlTcqEQJDNl4g2-a5Zrs4x8ky7GSa0vIuR59WxHcnTRZp4Wqv_rE2vU4MvXypJ8ok0FTaCgeYSHXBeWNDPE6LIiSzdVKe2RVH-GEaqtAzpHgU8yYwUCZZ2UKqcSghGP_Xepcngnk9V8cnbffEELNmRyMjbwLW4na1cpYFZay-wHWCptjYqitTsqiz3Sk2HlDvR17tEIRF46gcD60y-WXGLiJYQagjsVSVzlR2JEjDuD1ZlGnpOmuuX6WYKBuglYLlCRQ4kVA";
+const token = import.meta.env.VITE_SOCIETY_TOKEN;
 axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
 
-const responsive = {
-  desktop: {
-    breakpoint: { max: 3000, min: 1024 },
-    items: 4,
-    slidesToSlide: 4,
-  },
-  tablet: {
-    breakpoint: { max: 1024, min: 768 },
-    items: 3,
-    slidesToSlide: 3,
-  },
-  mobile: {
-    breakpoint: { max: 767, min: 464 },
-    items: 2,
-    slidesToSlide: 1,
-  },
-};
+
 
 interface Event {
   about: string;
@@ -45,7 +26,7 @@ interface Event {
   };
 }
 
-const ReactCarousel = () => {
+const EventPage = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showTable, setShowTable] = useState(false);
@@ -92,7 +73,7 @@ const ReactCarousel = () => {
     <div className="z-10">
       <div>
         <div className="text-2xl font-bold text-center my-5">
-          Upcoming Events
+          My Events
         </div>
 
         {loading ? (
@@ -100,28 +81,28 @@ const ReactCarousel = () => {
             Loading events...
           </p>
         ) : (
-          <Carousel
-            responsive={responsive}
-            autoPlay={true}
-            swipeable={true}
-            draggable={true}
-            showDots={true}
-            infinite={true}
-            partialVisible={false}
-            keyBoardControl={true}
-            containerClass="z-10"
-          >
-            {events.map((event: Event, index: number) => (
-              <div className="cursor-pointer mx-2 my-5 px-8" key={index}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* //show all the events with image and about */}
+            {events.map((event, index) => (
+              <div
+                key={index}
+                className="border rounded-md p-2 cursor-pointer hover:shadow-lg"
+                onClick={() => setSelectedEvent(event)}
+              >
                 <img
-                  src={event.images?.[0]?.url || ""}
-                  alt={event.name || "event"}
-                  className="w-full border rounded-md"
-                  onClick={() => setSelectedEvent(event)}
+                  src={event.images[0].url}
+                  alt={event.name}
+                  className="w-full h-48 object-cover rounded-md"
                 />
+                <div className="p-2">
+                  <h2 className="text-lg font-semibold">{event.name}</h2>
+                  <p className="text-sm">{event.about}</p>
+                </div>
               </div>
             ))}
-          </Carousel>
+            
+            
+          </div>
         )}
       </div>
 
@@ -191,4 +172,4 @@ const ReactCarousel = () => {
   );
 };
 
-export default ReactCarousel;
+export default EventPage;

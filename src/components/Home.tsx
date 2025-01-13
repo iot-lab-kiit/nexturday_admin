@@ -10,8 +10,8 @@ import { IoIosSettings } from "react-icons/io";
 import { FaPlus } from "react-icons/fa6";
 import { Separator } from "./ui/separator";
 import { Menu, UserRoundPen, X } from "lucide-react";
-import { SocietyCard } from "./SocietyCard";
-import ReactCarousel from "./ReactCarousel";
+import SocietyCard from "./SocietyCard";
+import EventPage from "./EventPage";
 
 function Home() {
   const [selectedTab, setSelectedTab] = useState<
@@ -21,6 +21,14 @@ function Home() {
   const [isLoggedin, setisLoggedin] = useState(false);
 
   const navigate = useNavigate();
+
+  //get user from session storage
+  const user = sessionStorage.getItem("user");
+
+  if(user){
+    setisLoggedin(true);
+  }
+
 
   return (
     <div className="w-full flex flex-col md:flex-row relative">
@@ -59,7 +67,7 @@ function Home() {
               className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
             >
               <MdGroups />
-              <p>Societies</p>
+              <p>My Society</p>
             </div>
             <div
               onClick={() => setSelectedTab("events")}
@@ -87,7 +95,13 @@ function Home() {
         </div>
         <Separator />
         {isLoggedin ? (
-          <div className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
+          <div
+            onClick={() => {
+              sessionStorage.removeItem("user");
+              setisLoggedin(false);
+              navigate("/login");
+            }}
+          className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
             <RiShutDownLine />
             <p>Logout</p>
           </div>
@@ -118,7 +132,7 @@ function Home() {
           </div>
         )}
         {selectedTab === "societies" && <SocietyCard />}
-        {selectedTab === "events" && <ReactCarousel />}
+        {selectedTab === "events" && <EventPage />}
       </div>
     </div>
   );
