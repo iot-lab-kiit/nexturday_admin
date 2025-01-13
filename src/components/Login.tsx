@@ -3,7 +3,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import {signup, signin} from "../lib/auth";
+import {signin} from "../lib/auth";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -29,7 +29,7 @@ function Login() {
   const login: SubmitHandler<FormData> = (data) => {
     setClicked(true);
     console.log(data);
-    signin(data.email, data.password)
+    signin(data.email, data.password);
   };
 
   return (
