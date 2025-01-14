@@ -38,7 +38,7 @@ function Login() {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/api/auth/society/login`,
+        `https://nexterday.iotkiit.in/api/auth/society/login`,
         {
           email: data.email,
           password: data.password,
