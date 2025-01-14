@@ -25,7 +25,7 @@ type FormData = z.infer<typeof schema>;
 
 const ProfilePage = () => {
   const [clicked, setClicked] = useState(false);
-  const [societyDetails, setSocietyDetails] = useState<FormData>();
+  // const [societyDetails, setSocietyDetails] = useState<FormData>();
 
   const navigate = useNavigate();
 
@@ -36,28 +36,6 @@ const ProfilePage = () => {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
-
-  const loadSocietyDetails = async () => {
-    try {
-      const response = await axios.get(
-        `https://nexterday.iotkiit.in/api/society`
-      );
-      setSocietyDetails(response.data.data);
-      console.log(response.data.data);
-
-      if (response.status === 200) {
-        console.log("fetched successfully");
-      } else {
-        console.error("Error fetching");
-      }
-    } catch (error) {
-      console.error("Error updating:", error);
-    }
-  };
-
-  useEffect(() => {
-    loadSocietyDetails();
-  }, []);
 
   const updateSocietyProfile = async (data: FormData) => {
     setClicked(true);
@@ -123,6 +101,11 @@ const ProfilePage = () => {
               {...register("name")}
               className="w-full text-center border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
             />
+            {errors.name?.message && (
+              <p className="font-normal text-center text-sm text-red-500 pt-2">
+                {errors.name.message}
+              </p>
+            )}
           </h2>
           <textarea
             className="w-full text-justify border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
@@ -229,8 +212,9 @@ const ProfilePage = () => {
               {/* <p className="text-gray-600">Phone 1: (123) 456-7890</p>
               <p className="text-gray-600">Phone 2: (098) 765-4321</p> */}
               <button
-                className="text-blue-500 hover:underline mt-2 self-start"
+                className="text-blue-500 hover:underline mt-2 self-start active:scale-90 transition-all"
                 type="submit"
+                disabled={clicked}
               >
                 Edit
               </button>
