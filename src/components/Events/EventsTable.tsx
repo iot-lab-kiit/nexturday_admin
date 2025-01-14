@@ -1,8 +1,8 @@
 import { FileDown } from "lucide-react";
-import { Participant, columns } from "../components/table/columns";
-import { DataTable } from "../components/table/data-table";
-import participantsData from "../data/iot-participants.json";
-import DownloadCSV from "./DownloadCSV";
+import { Participant, columns } from "../table/columns";
+import { DataTable } from "../table/data-table";
+import participantsData from "../../data/iot-participants.json";
+import DownloadCSV from "../Global/DownloadCSV";
 import { Button } from "@/components/ui/button";
 
 export default function EventsTable() {

@@ -3,10 +3,10 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router";
 import "./index.css";
 import App from "./App.tsx";
-import Login from "./components/Login.tsx";
-import ChangePassword from "./components/ChangePassword.tsx";
+import Login from "./components/Global/Login.tsx";
+import ChangePassword from "./components/Password/ChangePassword.tsx";
 import ProfilePage from "./components/ProfilePage.tsx";
-import AddEvent from "./components/AddEvent.tsx";
+import AddEvent from "./components/Events/AddEvent.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
