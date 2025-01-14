@@ -1,6 +1,21 @@
 import React, { useState } from "react";
-
+import axios from "axios";
+import { toast } from "react-hot-toast";
 type EventType = "online" | "offline";
+
+interface VenueType {
+  name: string;
+  mapUrl: string;
+}
+
+interface DetailType {
+  name: string;
+  about: string;
+  from: string;
+  to: string;
+  type: EventType;
+  venue: VenueType;
+}
 
 interface FormDataType {
   eventName: string;
@@ -12,7 +27,7 @@ interface FormDataType {
   venueName: string;
   mapUrl?: string; // Optional
   website?: string; // Optional
-  email: string;
+  emails: string[];
   contactNumbers: string[];
   registrationUrl: string;
   isPaidEvent: boolean;
@@ -20,6 +35,7 @@ interface FormDataType {
   participantCount?: number; // Optional
   selectedFile: File | null;
   optionalImageFile: File | null;
+  details: DetailType[]; // Added
 }
 
 const AddEvent: React.FC = () => {
@@ -33,14 +49,27 @@ const AddEvent: React.FC = () => {
     venueName: "",
     mapUrl: "",
     website: "",
-    email: "",
+    emails: [""],
     contactNumbers: [""],
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
     participantCount: 0,
     selectedFile: null,
-    optionalImageFile: null, // This is required for optionalImageFile to exist in formData
+    optionalImageFile: null,
+    details: [
+      {
+        name: "",
+        about: "",
+        from: "",
+        to: "",
+        type: "online",
+        venue: {
+          name: "",
+          mapUrl: "",
+        },
+      },
+    ],
   });
 
   const handleInputChange = (
@@ -81,17 +110,17 @@ const AddEvent: React.FC = () => {
     }
   };
 
-  const handleOptionalFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // const handleOptionalFileChange = (
+  //   event: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   const file = event.target.files?.[0];
+  //   if (!file) return;
 
-    setFormData((prev) => ({
-      ...prev,
-      optionalImageFile: file,
-    }));
-  };
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     optionalImageFile: file,
+  //   }));
+  // };
 
   const handleAddGuideline = () => {
     setFormData((prev) => ({
@@ -143,10 +172,171 @@ const AddEvent: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddEmail = () => {
+    setFormData((prev) => ({
+      ...prev,
+      emails: [...prev.emails, ""],
+    }));
+  };
+
+  const handleEmailChange = (index: number, value: string) => {
+    const updatedEmails = [...formData.emails];
+    updatedEmails[index] = value;
+    setFormData((prev) => ({
+      ...prev,
+      emails: updatedEmails,
+    }));
+  };
+
+  const handleRemoveEmail = (index: number) => {
+    const updatedEmails = formData.emails.filter((_, i) => i !== index);
+    setFormData((prev) => ({
+      ...prev,
+      emails: updatedEmails,
+    }));
+  };
+
+  const handleDetailFieldChange = (index, field, value, subField = null) => {
+    setFormData((prevState) => {
+      const updatedDetails = [...prevState.details];
+      if (subField) {
+        updatedDetails[index][field][subField] = value;
+      } else {
+        updatedDetails[index][field] = value;
+      }
+      return { ...prevState, details: updatedDetails };
+    });
+  };
+
+  const addSubEvent = () => {
+    setFormData((prevState) => ({
+      ...prevState,
+      details: [
+        ...prevState.details,
+        {
+          name: "",
+          about: "",
+          from: "",
+          to: "",
+          type: "online",
+          venue: {
+            name: "",
+            mapUrl: "",
+          },
+        },
+      ],
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder: Send `formData` to the backend when ready
-    console.log("Submitting form data:", formData);
+
+    const { isPaidEvent, website, price, eventName, about, registrationUrl } =
+      formData;
+
+    console.log("formData", formData);
+
+    // Validation checks
+    if (!eventName.trim()) {
+      toast.error("Event name is required!");
+      return;
+    }
+
+    if (!about.trim()) {
+      toast.error("Event description is required!");
+      return;
+    }
+
+    if (!registrationUrl.trim()) {
+      toast.error("Registration URL is required!");
+      return;
+    }
+
+    if (formData.details.length === 0) {
+      toast.error("At least one sub-event is required!");
+      return;
+    }
+
+    for (const [index, detail] of formData.details.entries()) {
+      if (!detail.name.trim()) {
+        toast.error(`Sub Event ${index + 1} must have a name!`);
+        return;
+      }
+      if (!detail.about.trim()) {
+        toast.error(`Sub Event ${index + 1} must have a description!`);
+        return;
+      }
+      if (!detail.from || !detail.to) {
+        toast.error(`Sub Event ${index + 1} must have valid dates!`);
+        return;
+      }
+    }
+
+    if (isPaidEvent) {
+      if (!price || isNaN(price) || price <= 0) {
+        toast.error(
+          "Price is required and must be a valid positive number for paid events!"
+        );
+        return;
+      }
+      if (!website.trim()) {
+        toast.error("Website URL is required for paid events!");
+        return;
+      }
+    }
+
+    // Convert dates to ISO format
+    const fromISO = new Date(formData.fromDate).toISOString();
+    const toISO = new Date(formData.toDate).toISOString();
+
+    // Create FormData
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", eventName);
+    formDataToSend.append("about", about);
+    formDataToSend.append("websiteUrl", website || "");
+    formDataToSend.append("registrationUrl", registrationUrl);
+    formDataToSend.append("price", isPaidEvent ? price.toString() : "0");
+    formDataToSend.append("from", fromISO);
+    formDataToSend.append("to", toISO);
+    formDataToSend.append("paid", isPaidEvent.toString());
+
+    formData.emails.forEach((email) => formDataToSend.append("emails", email));
+    formData.guidelines.forEach((g) => formDataToSend.append("guidlines", g));
+    formData.contactNumbers.forEach((n) =>
+      formDataToSend.append("phoneNumbers", n)
+    );
+
+    formDataToSend.append("details", JSON.stringify(formData.details));
+
+    if (formData.selectedFile) {
+      formDataToSend.append("images", formData.selectedFile);
+    }
+
+    // Show loader toast
+    const toastId = toast.loading("Submitting form...");
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/api/events`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+          },
+        }
+      );
+
+      toast.dismiss(toastId); // Dismiss the loader
+      toast.success("Form submitted successfully!");
+
+      console.log("Response:", response.data);
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error("Error submitting form. Please try again.");
+      console.error("Error:", error);
+      throw error;
+    }
   };
 
   return (
@@ -229,9 +419,6 @@ const AddEvent: React.FC = () => {
             ></textarea>
           </div>
 
-          {/* Details Heading */}
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Details</h2>
-
           {/* Guidelines Section */}
           <div className="flex flex-col gap-2">
             <label className="text-gray-700 text-sm font-bold">
@@ -266,173 +453,38 @@ const AddEvent: React.FC = () => {
             </button>
           </div>
 
-          {/* Event Type */}
-          <div className="flex flex-col gap-2">
-            <label
-              className="text-gray-700 text-sm font-bold"
-              htmlFor="eventType"
-            >
-              Event Type <span className="text-red-500 ml-1">*</span>
-            </label>
-            <select
-              id="eventType"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-            >
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-            </select>
-          </div>
-
-          {/* Event Dates */}
-          <div className="flex flex-col gap-2 md:flex-row md:gap-4">
-            <div className="flex flex-col gap-2 flex-grow">
-              <label
-                className="text-gray-700 text-sm font-bold"
-                htmlFor="fromDate"
-              >
-                From <span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="date"
-                id="fromDate"
-                value={formData.fromDate}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-              />
-            </div>
-            <div className="flex flex-col gap-2 flex-grow">
-              <label
-                className="text-gray-700 text-sm font-bold"
-                htmlFor="toDate"
-              >
-                To <span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="date"
-                id="toDate"
-                value={formData.toDate}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Venue */}
-          <div className="flex flex-col gap-2">
-            <label
-              className="text-gray-700 text-sm font-bold"
-              htmlFor="venueName"
-            >
-              Venue Name <span className="text-red-500 ml-1">*</span>
-            </label>
-            <input
-              type="text"
-              id="venueName"
-              value={formData.venueName}
-              onChange={handleInputChange}
-              placeholder="Enter venue name"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-            />
-
-            <label className="text-gray-700 text-sm font-bold" htmlFor="mapUrl">
-              Google Map Embedded Link
-            </label>
-            <input
-              type="url"
-              id="mapUrl"
-              placeholder="Enter Google Maps embedded link"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-              value={formData.mapUrl} // Bind the value to formData
-              onChange={handleInputChange} // Use the central handler
-            />
-
-            {formData.mapUrl && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-700">Map Preview:</p>
-                <iframe
-                  src={formData.mapUrl}
-                  className="w-full h-64 border rounded-lg"
-                  allowFullScreen
-                  loading="lazy"
-                ></iframe>
-              </div>
-            )}
-          </div>
-
-          {/* Additional Image Upload */}
+          {/* Emails Section */}
           <div className="flex flex-col gap-2">
             <label className="text-gray-700 text-sm font-bold">
-              Optional Image
+              Emails <span className="text-red-500 ml-1">*</span>
             </label>
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() =>
-                  document.getElementById("optionalImage")?.click()
-                }
-                className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
-              >
-                Upload Image
-              </button>
-              {formData.optionalImageFile && (
-                <span className="text-gray-600 text-sm">
-                  {formData.optionalImageFile.name}
-                </span>
-              )}
-            </div>
-            <input
-              type="file"
-              id="optionalImage"
-              accept="image/*"
-              className="hidden"
-              onChange={handleOptionalFileChange}
-            />
-          </div>
-
-          {formData.optionalImageFile && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-700">Optional Image Preview:</p>
-              <div className="mt-2 border rounded-lg overflow-hidden">
-                <img
-                  src={URL.createObjectURL(formData.optionalImageFile)}
-                  alt="Optional Event"
-                  className="w-full h-64 object-contain"
+            {formData.emails.map((email, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => handleEmailChange(index, e.target.value)}
+                  placeholder={`Email ${index + 1}`}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                 />
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveEmail(index)}
+                    className="bg-red-500 text-white font-bold py-1 px-3 rounded-lg hover:bg-red-600 focus:outline-none"
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Website */}
-          <div className="flex flex-col gap-2">
-            <label
-              className="text-gray-700 text-sm font-bold"
-              htmlFor="website"
+            ))}
+            <button
+              type="button"
+              onClick={handleAddEmail}
+              className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none"
             >
-              Website
-            </label>
-            <input
-              type="url"
-              id="website"
-              placeholder="Enter website URL"
-              value={formData.website}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-            />
-          </div>
-
-          {/* Email */}
-          <div className="flex flex-col gap-2">
-            <label className="text-gray-700 text-sm font-bold" htmlFor="email">
-              Email <span className="text-red-500 ml-1">*</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              placeholder="Enter email address"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-            />
+              Add Email
+            </button>
           </div>
 
           {/* Contact Numbers Section */}
@@ -489,6 +541,40 @@ const AddEvent: React.FC = () => {
             />
           </div>
 
+          {/* Event Dates */}
+          <div className="flex flex-col gap-2 md:flex-row md:gap-4">
+            <div className="flex flex-col gap-2 flex-grow">
+              <label
+                className="text-gray-700 text-sm font-bold"
+                htmlFor="fromDate"
+              >
+                From <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="date"
+                id="fromDate"
+                value={formData.fromDate}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-2 flex-grow">
+              <label
+                className="text-gray-700 text-sm font-bold"
+                htmlFor="toDate"
+              >
+                To <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="date"
+                id="toDate"
+                value={formData.toDate}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+              />
+            </div>
+          </div>
+
           {/* Paid Event Checkbox */}
           <div className="flex items-center gap-2">
             <input
@@ -542,6 +628,158 @@ const AddEvent: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Website */}
+          <div className="flex flex-col gap-2">
+            <label
+              className="text-gray-700 text-sm font-bold"
+              htmlFor="website"
+            >
+              Website
+            </label>
+            <input
+              type="url"
+              id="website"
+              placeholder="Enter website URL"
+              value={formData.website}
+              onChange={handleInputChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+            />
+          </div>
+
+          {/* Details Section */}
+          {formData.details.map((detail, index) => (
+            <div key={index} className="flex flex-col gap-4">
+              <h4 className="text-gray-700 text-sm font-bold">
+                Details (Sub Event {index + 1})
+              </h4>
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 text-sm font-bold">Name</label>
+                <input
+                  type="text"
+                  placeholder={`Enter name for Sub Event ${index + 1}`}
+                  value={detail.name}
+                  onChange={(e) =>
+                    handleDetailFieldChange(index, "name", e.target.value)
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 text-sm font-bold">About</label>
+                <textarea
+                  placeholder={`Enter description for Sub Event ${index + 1}`}
+                  value={detail.about}
+                  onChange={(e) =>
+                    handleDetailFieldChange(index, "about", e.target.value)
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none resize-none"
+                ></textarea>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 text-sm font-bold">From</label>
+                <input
+                  type="datetime-local"
+                  value={detail.from}
+                  onChange={(e) =>
+                    handleDetailFieldChange(index, "from", e.target.value)
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 text-sm font-bold">To</label>
+                <input
+                  type="datetime-local"
+                  value={detail.to}
+                  onChange={(e) =>
+                    handleDetailFieldChange(index, "to", e.target.value)
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 text-sm font-bold">Type</label>
+                <select
+                  value={detail.type}
+                  onChange={(e) =>
+                    handleDetailFieldChange(index, "type", e.target.value)
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                >
+                  <option value="ONLINE">ONLINE</option>
+                  <option value="OFFLINE">OFFLINE</option>
+                </select>
+              </div>
+              {detail.type === "OFFLINE" && (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-gray-700 text-sm font-bold">
+                      Venue Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={`Enter venue name for Sub Event ${
+                        index + 1
+                      }`}
+                      value={detail.venue.name}
+                      onChange={(e) =>
+                        handleDetailFieldChange(
+                          index,
+                          "venue",
+                          e.target.value,
+                          "name"
+                        )
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-gray-700 text-sm font-bold">
+                      Venue Map URL
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={`Enter venue map URL for Sub Event ${
+                        index + 1
+                      }`}
+                      value={detail.venue.mapUrl}
+                      onChange={(e) =>
+                        handleDetailFieldChange(
+                          index,
+                          "venue",
+                          e.target.value,
+                          "mapUrl"
+                        )
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                    />
+                  </div>
+                  {detail.venue.mapUrl && (
+                    <div className="mt-4">
+                      <label className="text-gray-600 text-sm font-semibold">
+                        Map Preview:
+                      </label>
+                      <iframe
+                        src={detail.venue.mapUrl}
+                        title={`Map Preview for Sub Event ${index + 1}`}
+                        className="w-full h-64 border border-gray-300 rounded-lg mt-2"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+
+          <button
+            type="button"
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            onClick={() => addSubEvent()}
+          >
+            Add More Sub-Events
+          </button>
 
           {/* Submit Button */}
           <button
