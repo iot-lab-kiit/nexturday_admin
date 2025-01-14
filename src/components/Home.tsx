@@ -15,7 +15,7 @@ import EventPage from "./EventPage";
 import axios from "axios";
 
 function Home() {
-  const [selectedTab, setSelectedTab] = useState<"societies" | "events" | "home">("home");
+  const [selectedTab, setSelectedTab] = useState<"societies" | "events" | "home" | "AddEvent">("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
