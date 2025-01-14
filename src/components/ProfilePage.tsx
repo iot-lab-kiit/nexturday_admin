@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
@@ -41,7 +41,7 @@ const ProfilePage = () => {
     setClicked(true);
     try {
       const response = await axios.patch(
-        `https://nexterday.iotkiit.in/api/society`,
+        `${import.meta.env.VITE_BASE_URL}/api/society`,
         {
           name: data.name,
           desc: data.description,
