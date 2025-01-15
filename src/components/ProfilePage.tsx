@@ -6,12 +6,14 @@ import { useNavigate } from "react-router";
 import { z } from "zod";
 
 const schema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  description: z.string(),
   email: z.string().email("Invalid email address"),
   password: z
     .string()
     .min(8, { message: "Password must be at least 8 characters long" }),
-  website: z.string().url({ message: "Enter valid url" }),
-  phone: z
+  websiteUrl: z.string().url({ message: "Enter valid url" }),
+  phoneNumber: z
     .string()
     .regex(
       /^\s*(?:\+?(\d{1,3}))?([-. (]*(\d{3})[-. )]*)?((\d{3})[-. ]*(\d{2,4})(?:[-.x ]*(\d+))?)\s*$/gm,
@@ -23,6 +25,7 @@ type FormData = z.infer<typeof schema>;
 
 const ProfilePage = () => {
   const [clicked, setClicked] = useState(false);
+  // const [societyDetails, setSocietyDetails] = useState<FormData>();
 
   const navigate = useNavigate();
 
@@ -40,10 +43,12 @@ const ProfilePage = () => {
       const response = await axios.patch(
         `${import.meta.env.VITE_BASE_URL}/api/society`,
         {
-          websiteUrl: data.website,
+          name: data.name,
+          desc: data.description,
+          websiteUrl: data.websiteUrl,
           email: data.email,
           password: data.password,
-          phoneNumber: data.phone,
+          phoneNumber: data.phoneNumber,
         },
         {
           headers: {
@@ -65,7 +70,10 @@ const ProfilePage = () => {
     }
   };
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-center px-4 py-8">
+    <form
+      onSubmit={handleSubmit(updateSocietyProfile)}
+      className="min-h-screen bg-gray-100 flex justify-center items-center px-4 py-8"
+    >
       {/* Container for the profile page */}
       <div className="bg-white shadow-lg rounded-lg w-full max-w-4xl p-6 flex flex-col md:flex-row gap-6">
         {/* Left Section: Admin Info */}
@@ -85,21 +93,33 @@ const ProfilePage = () => {
             />
           </div>
           {/* Admin Name and Description */}
-          <h2 className="text-2xl font-bold text-gray-800">Society Name</h2>
-          <p className="text-gray-600 text-center mt-2 px-2">
-            This is a brief description about the society. It can be 2-3 lines
-            long.
-          </p>
+          <h2 className="text-2xl font-bold text-gray-800 pb-2">
+            <input
+              type="text"
+              placeholder="Society Name"
+              // defaultValue={societyDetails?.name}
+              {...register("name")}
+              className="w-full text-center border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+            />
+            {errors.name?.message && (
+              <p className="font-normal text-center text-sm text-red-500 pt-2">
+                {errors.name.message}
+              </p>
+            )}
+          </h2>
+          <textarea
+            className="w-full text-justify border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+            placeholder="This is a brief description about the society. It can be 2-3 lines long."
+            // defaultValue={societyDetails?.description}
+            {...register("description")}
+          ></textarea>
         </div>
 
         {/* Right Section: Admin Details Form */}
         <div className="md:w-2/3 flex flex-col gap-6">
           {/* Horizontal divider for smaller screens */}
           <hr className="md:hidden border-gray-300" />
-          <form
-            onSubmit={handleSubmit(updateSocietyProfile)}
-            className="w-full flex flex-col gap-6"
-          >
+          <div className="w-full flex flex-col gap-6">
             {/* Email Input Field */}
             <div className="flex flex-col gap-2">
               <label
@@ -111,6 +131,7 @@ const ProfilePage = () => {
               <input
                 id="email"
                 type="email"
+                // defaultValue={societyDetails?.email}
                 {...register("email")}
                 placeholder="admin@email.com"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
@@ -161,13 +182,14 @@ const ProfilePage = () => {
               <input
                 type="url"
                 id="website"
-                {...register("website")}
+                // defaultValue={societyDetails?.websiteUrl}
+                {...register("websiteUrl")}
                 placeholder="https://societywebsite.com"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
               />
-              {errors.website?.message && (
+              {errors.websiteUrl?.message && (
                 <p className="font-normal text-sm text-red-500 pt-2">
-                  {errors.website.message}
+                  {errors.websiteUrl.message}
                 </p>
               )}
             </div>
@@ -176,28 +198,31 @@ const ProfilePage = () => {
               <h3 className="text-lg font-bold text-gray-800">Contact</h3>
               <input
                 type="tel"
-                {...register("phone")}
+                id=".phoneNumber"
+                // defaultValue={societyDetails?.phoneNumber}
+                {...register("phoneNumber")}
                 placeholder="Phone : (098) 765-4321"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
               />
-              {errors.phone?.message && (
+              {errors.phoneNumber?.message && (
                 <p className="font-normal text-sm text-red-500 pt-2">
-                  {errors.phone.message}
+                  {errors.phoneNumber.message}
                 </p>
               )}
               {/* <p className="text-gray-600">Phone 1: (123) 456-7890</p>
               <p className="text-gray-600">Phone 2: (098) 765-4321</p> */}
               <button
-                className="text-blue-500 hover:underline mt-2 self-start"
+                className="text-blue-500 hover:underline mt-2 self-start active:scale-90 transition-all"
                 type="submit"
+                disabled={clicked}
               >
                 Edit
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 
