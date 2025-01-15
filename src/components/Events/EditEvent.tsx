@@ -3,22 +3,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
+import { fetchEvent, updateEvent } from '@/api/editEventApi';
 
-const venueSchema = z.object({
-  mapUrl: z.string().url("Please enter a valid map URL"),
-  name: z.string().min(1, "Venue name is required"),
-});
-
-const detailSchema = z.object({
-  name: z.string().min(1, "Detail name is required"),
-  about: z.string().min(1, "Detail description is required"),
-  from: z.string().min(1, "Start time is required"),
-  to: z.string().min(1, "End time is required"),
-  type: z.enum(["OFFLINE", "ONLINE"]),
-  venue: venueSchema,
-});
 
 const eventSchema = z.object({
   name: z.string().min(1, "Event name is required"),
@@ -81,10 +68,9 @@ const EditEvent = () => {
   });
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    const loadEvent = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/events/${id}`);
-        const eventData = response.data.data;
+        const eventData = await fetchEvent(id);
         setValue("name", eventData.name);
         setValue("about", eventData.about);
         setValue("websiteUrl", eventData.websiteUrl);
@@ -118,7 +104,7 @@ const EditEvent = () => {
       }
     };
 
-    fetchEvent();
+    loadEvent();
   }, [id, setValue]);
 
   const onSubmit = async (data: EventFormData) => {
@@ -157,7 +143,7 @@ const EditEvent = () => {
         imagesKeys: [] 
       };
       
-      await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/events/${id}`, formData);
+      await updateEvent(id, formData);
       toast.success("Event updated successfully");
       navigate(`/events/${id}`);
     } catch (error) {
