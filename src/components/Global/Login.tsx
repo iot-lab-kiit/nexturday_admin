@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { loginSociety } from "../api/authApi";
+import { loginSociety } from "@/api/authApi";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),

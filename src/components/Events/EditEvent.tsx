@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { fetchEvent, updateEvent } from '../api/editEventApi';
+import { fetchEvent, updateEvent } from '@/api/editEventApi';
 
 
 const eventSchema = z.object({
