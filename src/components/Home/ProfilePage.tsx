@@ -211,6 +211,7 @@ const ProfilePage = () => {
               )}
               {/* <p className="text-gray-600">Phone 1: (123) 456-7890</p>
               <p className="text-gray-600">Phone 2: (098) 765-4321</p> */}
+              <div className="flex justify-between items-center">
               <button
                 className="text-blue-500 hover:underline mt-2 self-start active:scale-90 transition-all"
                 type="submit"
@@ -218,6 +219,13 @@ const ProfilePage = () => {
               >
                 Edit
               </button>
+              {/* cancel button */}
+              <button
+              onClick={() => navigate("/") }
+               className="text-blue-500 hover:underline mt-2 self-start">
+                Cancel
+              </button>
+              </div>
             </div>
           </div>
         </div>

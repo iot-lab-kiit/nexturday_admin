@@ -1,6 +1,9 @@
+'use client';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import LoadingSpinner from '../Global/LoadingSpinner';
+import { getEventDetails } from '@/api/event';
 
 interface Event {
   id: string;
@@ -29,9 +32,7 @@ const EventDetails = () => {
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/api/events/${id}`
-        );
+        const response = await getEventDetails(id!);
         setEvent(response.data.data);
       } catch (error) {
         console.error("Error fetching event details:", error);
@@ -44,7 +45,9 @@ const EventDetails = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="text-center py-10">Loading...</div>;
+    return <div className="text-center py-10">
+      <LoadingSpinner/>
+    </div>;
   }
 
   if (!event) {
@@ -101,7 +104,7 @@ const EventDetails = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span>KiiT University</span>
+              <span>KIIT University</span>
             </div>
           </div>
 

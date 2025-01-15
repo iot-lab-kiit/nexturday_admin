@@ -1,42 +1,30 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  MdKeyboardArrowDown,
-  MdGroups,
-  MdEventAvailable,
-} from "react-icons/md";
+import { MdGroups, MdEventAvailable } from "react-icons/md";
 import { RiShutDownLine } from "react-icons/ri";
-import { IoIosSettings } from "react-icons/io";
 import { FaPlus } from "react-icons/fa6";
-import { Separator } from "./ui/separator";
 import { Menu, UserRoundPen, X } from "lucide-react";
-import SocietyPage from "./SocietyPage";
-import EventPage from "./EventPage";
-import axios from "axios";
+import SocietyPage from "../Society/SocietyPage";
+import EventPage from "../Events/EventPage";
+import { Separator } from "../ui/separator";
+import { getUserEmail } from "@/api/email";
 
 function Home() {
   const [selectedTab, setSelectedTab] = useState<"societies" | "events" | "home" | "AddEvent">("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
-  // Get user from session storage
-  const user = sessionStorage.getItem("user");
-  if (user) {
-    setIsLoggedin(true);
-  }
 
-  const token = sessionStorage.getItem("societyToken");
-  axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
     const fetchUserEmail = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/api/society`
-        );
+        const response = await getUserEmail();
+        setUserName(response.data.data.name);
         setUserEmail(response.data.data.email);
       } catch (error) {
         console.error("Error fetching user email:", error);
@@ -65,16 +53,10 @@ function Home() {
 
           <div className="h-[10vh] p-2 mx-2">
             <div className="flex md:flex-row items-center justify-between">
-              <div className="flex flex-row items-center">
-                Admin
-                <MdKeyboardArrowDown className="mt-1" />
-              </div>
-              <div>
-                <IoIosSettings />
-              </div>
+              <div className="flex flex-row items-center">Admin Panel</div>
             </div>
             <p className="text-xs font-thin text-gray-400">
-              admin: {userEmail || "Loading..."}
+              {userName || ""}: {userEmail || ""}
             </p>
           </div>
           <Separator />
@@ -95,7 +77,10 @@ function Home() {
             </div>
           </div>
           <Separator />
-          <div onClick={()=>navigate('/add-event')} className="text-sm border-[1px] rounded-full m-2 py-1 px-2 w-fit mx-auto flex flex-row gap-2 items-center justify-center mt-4 text-blue-400 cursor-pointer hover:text-white">
+          <div
+            onClick={() => navigate("/add-event")}
+            className="text-sm border-[1px] rounded-full m-2 py-1 px-2 w-fit mx-auto flex flex-row gap-2 items-center justify-center mt-4 text-blue-400 cursor-pointer hover:text-white"
+          >
             <FaPlus className="text-xl" />
             <p>Add Events</p>
           </div>
@@ -111,9 +96,8 @@ function Home() {
         {isLoggedin ? (
           <div
             onClick={() => {
-              sessionStorage.removeItem("user");
+              sessionStorage.removeItem("societyToken");
               setIsLoggedin(false);
-              navigate("/login");
             }}
             className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
           >

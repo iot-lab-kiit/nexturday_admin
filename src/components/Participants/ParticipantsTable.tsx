@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { getParticipants } from "@/api/event";
+import LoadingSpinner from "../Global/LoadingSpinner";
 
 interface ParticipantDetail {
   id: string;
@@ -40,9 +41,7 @@ const ParticipantsTable = () => {
     const fetchParticipants = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/api/events/society/${id}/participants?page=${currentPage}&field=createdAt&direction=desc`
-        );
+        const response = await getParticipants(id!, currentPage);
         setParticipants(response.data.data);
       } catch (error) {
         console.error("Error fetching participants:", error);
@@ -55,7 +54,11 @@ const ParticipantsTable = () => {
   }, [id, currentPage]);
 
   if (loading) {
-    return <div className="text-center py-10">Loading participants...</div>;
+    return (
+      <div className="text-center py-10">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (!participants || participants.data.length === 0) {
@@ -66,7 +69,7 @@ const ParticipantsTable = () => {
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Participants List</h1>
-        
+
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -93,7 +96,10 @@ const ParticipantsTable = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {participants.data.map((participant) => (
-                <tr key={participant.participantId} className="hover:bg-gray-50">
+                <tr
+                  key={participant.participantId}
+                  className="hover:bg-gray-50"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {participant.participant.detail.name}
@@ -134,23 +140,23 @@ const ParticipantsTable = () => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
               className={`px-4 py-2 text-sm rounded-md ${
                 currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
               } border`}
             >
               Previous
             </button>
             <button
-              onClick={() => setCurrentPage(prev => prev + 1)}
+              onClick={() => setCurrentPage((prev) => prev + 1)}
               disabled={!participants.nextPage}
               className={`px-4 py-2 text-sm rounded-md ${
                 !participants.nextPage
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
               } border`}
             >
               Next
@@ -162,4 +168,4 @@ const ParticipantsTable = () => {
   );
 };
 
-export default ParticipantsTable; 
+export default ParticipantsTable;
