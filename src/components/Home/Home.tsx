@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { MdGroups, MdEventAvailable } from "react-icons/md";
 import { RiShutDownLine } from "react-icons/ri";
 import { FaPlus } from "react-icons/fa6";
-import { Separator } from "./ui/separator";
 import { Menu, UserRoundPen, X } from "lucide-react";
-import SocietyPage from "./Society/SocietyPage";
-import EventPage from "./Events/EventPage";
-import axios from "axios";
+import SocietyPage from "../Society/SocietyPage";
+import EventPage from "../Events/EventPage";
+import { Separator } from "../ui/separator";
+import { getUserEmail } from "@/api/email";
 
 function Home() {
   const [selectedTab, setSelectedTab] = useState<"societies" | "events" | "home" | "AddEvent">("home");
@@ -18,18 +18,12 @@ function Home() {
 
   const navigate = useNavigate();
 
-  const token = sessionStorage.getItem("societyToken");
-  axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
-  // if (token) {
-  //   setIsLoggedin(true);
-  // }
+
 
   useEffect(() => {
     const fetchUserEmail = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/api/society`
-        );
+        const response = await getUserEmail();
         setUserName(response.data.data.name);
         setUserEmail(response.data.data.email);
       } catch (error) {

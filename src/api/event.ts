@@ -1,4 +1,4 @@
-import api from "@/api/api_instance"; // Import the custom Axios instance
+import api from "@/api/api_instance";
 
 export const getEvents = async () => {
   try {
@@ -17,20 +17,38 @@ export const getEvents = async () => {
   }
 };
 
-export const getParticipants = async (
-  id: string,
-  page = 1,
-  field = "createdAt",
-  direction = "desc"
-) => {
+export const getEventDetails = async (eventId: string) => {
+  try {
+    const response = await api.get(`/api/events/${eventId}`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching event details:", error);
+    throw error;
+  }
+}
+
+export const getParticipants= async (id: string, currentPage:number) => {
   try {
     const response = await api.get(`/api/events/society/${id}/participants`, {
-      params: { page, field, direction },
+      params: {
+        page: currentPage,
+        field: "createdAt",
+        direction: "desc",
+      },
     });
-    console.log(response.data.data);
-    return response.data.data;
+    return response;
   } catch (error) {
     console.error("Error fetching participants:", error);
-    throw error; // Rethrow or handle the error as needed
+    throw error;
+  }
+}
+
+export const deleteEvent = async (eventId: string) => {
+  try {
+    const response = await api.delete(`/api/events/${eventId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    throw error;
   }
 };
