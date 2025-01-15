@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
-import EventsTable from "./EventsTable";
-import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import toast from "react-hot-toast";
-
-axios.defaults.baseURL = "https://nexterday.iotkiit.in/";
-const token = sessionStorage.getItem("societyToken");
-
-axios.defaults.headers.common = { Authorization: `Bearer ${token}` };
+import { getEvents, deleteEvent } from '../api/eventsApi';
 
 interface Event {
   id: string;
@@ -66,37 +60,15 @@ const DeleteConfirmation = ({ isOpen, eventName, onConfirm, onCancel }: DeleteCo
 const EventPage = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [showTable, setShowTable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
   const [deleteEventName, setDeleteEventName] = useState<string>("");
 
   useEffect(() => {
-    const fetchParticipants = async () => {
+    const loadEvents = async () => {
       try {
-        const response = await axios.get(
-          "https://nexterday.iotkiit.in/api/participants"
-        );
-        console.log(response.data.data);
-      } catch (error) {
-        console.error("Error fetching participants:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchParticipants();
-  }, []);
-
-  useEffect(() => {
-    const getEvents = async () => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/api/events?page=1&field=createdAt&direction=desc`
-        );
-        console.log(response.data.data.data);
-        setEvents(response.data.data.data);
+        const data = await getEvents();
+        setEvents(data);
       } catch (error) {
         console.error("Error fetching events:", error);
       } finally {
@@ -104,12 +76,12 @@ const EventPage = () => {
       }
     };
 
-    getEvents();
+    loadEvents();
   }, []);
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/events/${eventId}`);
+      await deleteEvent(eventId);
       setEvents(events.filter(event => event.id !== eventId));
       toast.success("Event deleted successfully");
     } catch (error) {
@@ -226,14 +198,6 @@ const EventPage = () => {
           ))}
         </div>
       )}
-
-      {/* {loading ? (
-        <p className="text-center text-lg font-medium my-5">
-          Loading participants data...
-        </p>
-      ) : (
-        showTable && <EventsTable/>
-      )} */}
 
       <DeleteConfirmation
         isOpen={!!deleteEventId}

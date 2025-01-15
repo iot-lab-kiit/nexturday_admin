@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { fetchEventDetails } from '../api/eventDetailsApi';
 
 interface Event {
   id: string;
@@ -27,12 +27,10 @@ const EventDetails = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchEventDetails = async () => {
+    const loadEventDetails = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/api/events/${id}`
-        );
-        setEvent(response.data.data);
+        const eventData = await fetchEventDetails(id);
+        setEvent(eventData);
       } catch (error) {
         console.error("Error fetching event details:", error);
       } finally {
@@ -40,7 +38,7 @@ const EventDetails = () => {
       }
     };
 
-    fetchEventDetails();
+    loadEventDetails();
   }, [id]);
 
   if (loading) {

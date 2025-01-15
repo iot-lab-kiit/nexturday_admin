@@ -1,9 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
+import { updateSocietyProfile } from "../api/societyApi";
 
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -25,8 +25,6 @@ type FormData = z.infer<typeof schema>;
 
 const ProfilePage = () => {
   const [clicked, setClicked] = useState(false);
-  // const [societyDetails, setSocietyDetails] = useState<FormData>();
-
   const navigate = useNavigate();
 
   const {
@@ -37,28 +35,10 @@ const ProfilePage = () => {
     resolver: zodResolver(schema),
   });
 
-  const updateSocietyProfile = async (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     setClicked(true);
     try {
-      const response = await axios.patch(
-        `${import.meta.env.VITE_BASE_URL}/api/society`,
-        {
-          name: data.name,
-          desc: data.description,
-          websiteUrl: data.websiteUrl,
-          email: data.email,
-          password: data.password,
-          phoneNumber: data.phoneNumber,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
-          },
-        }
-      );
-      console.log(response);
-
+      const response = await updateSocietyProfile(data);
       if (response.status === 200) {
         console.log("updated successfully");
       } else {
@@ -69,37 +49,32 @@ const ProfilePage = () => {
       console.error("Error updating:", error);
     }
   };
+
   return (
     <form
-      onSubmit={handleSubmit(updateSocietyProfile)}
-      className="min-h-screen bg-gray-100 flex justify-center items-center px-4 py-8"
+      onSubmit={handleSubmit(onSubmit)}
+      className="min-h-screen bg-gradient-to-r from-blue-100 to-purple-100 flex justify-center items-center px-4 py-8"
     >
-      {/* Container for the profile page */}
-      <div className="bg-white shadow-lg rounded-lg w-full max-w-4xl p-6 flex flex-col md:flex-row gap-6">
-        {/* Left Section: Admin Info */}
-        <div className="md:w-1/3 flex flex-col items-center border-r pr-6">
-          {/* Profile Image and Edit Icon */}
-          <div className="relative flex items-center justify-center w-28 h-28 mb-4">
+      <div className="bg-white shadow-2xl rounded-lg w-full max-w-4xl p-8 flex flex-col md:flex-row gap-8">
+        <div className="md:w-1/3 flex flex-col items-center border-r pr-8">
+          <div className="relative flex items-center justify-center w-32 h-32 mb-6">
             <img
               src="/images/adminProfile.jpg"
               alt="Profile"
-              className="w-full h-full rounded-full border border-gray-300 shadow-sm"
+              className="w-full h-full rounded-full border-4 border-blue-300 shadow-lg"
             />
-            {/* Edit icon positioned at the bottom-right of the profile image */}
             <img
               src="/icons/edit.png"
               alt="Edit"
-              className="absolute bottom-1 right-1 w-7 h-7 bg-white p-1 rounded-full border cursor-pointer hover:shadow-md hover:bg-gray-50"
+              className="absolute bottom-1 right-1 w-8 h-8 bg-white p-1 rounded-full border cursor-pointer hover:shadow-lg hover:bg-gray-100"
             />
           </div>
-          {/* Admin Name and Description */}
-          <h2 className="text-2xl font-bold text-gray-800 pb-2">
+          <h2 className="text-2xl font-semibold text-gray-900 pb-3">
             <input
               type="text"
               placeholder="Society Name"
-              // defaultValue={societyDetails?.name}
               {...register("name")}
-              className="w-full text-center border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+              className="w-full text-center border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
             />
             {errors.name?.message && (
               <p className="font-normal text-center text-sm text-red-500 pt-2">
@@ -108,19 +83,15 @@ const ProfilePage = () => {
             )}
           </h2>
           <textarea
-            className="w-full text-justify border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+            className="w-full text-justify border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
             placeholder="This is a brief description about the society. It can be 2-3 lines long."
-            // defaultValue={societyDetails?.description}
             {...register("description")}
           ></textarea>
         </div>
 
-        {/* Right Section: Admin Details Form */}
-        <div className="md:w-2/3 flex flex-col gap-6">
-          {/* Horizontal divider for smaller screens */}
+        <div className="md:w-2/3 flex flex-col gap-8">
           <hr className="md:hidden border-gray-300" />
           <div className="w-full flex flex-col gap-6">
-            {/* Email Input Field */}
             <div className="flex flex-col gap-2">
               <label
                 className="text-gray-700 text-sm font-bold"
@@ -131,10 +102,9 @@ const ProfilePage = () => {
               <input
                 id="email"
                 type="email"
-                // defaultValue={societyDetails?.email}
                 {...register("email")}
                 placeholder="admin@email.com"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
               />
               {errors.email?.message && (
                 <p className="font-normal text-sm text-red-500 pt-2">
@@ -142,7 +112,6 @@ const ProfilePage = () => {
                 </p>
               )}
             </div>
-            {/* Password Input Field with Forgot Password Link */}
             <div className="flex items-center gap-4">
               <div className="flex-grow flex flex-col gap-2">
                 <label
@@ -156,7 +125,7 @@ const ProfilePage = () => {
                   type="password"
                   {...register("password")}
                   placeholder="********"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
                 />
                 {errors.password?.message && (
                   <p className="font-normal text-sm text-red-500 pt-2">
@@ -164,14 +133,7 @@ const ProfilePage = () => {
                   </p>
                 )}
               </div>
-              {/* <button
-                className="text-blue-500 hover:underline text-sm flex items-center justify-center"
-                type="button"
-              >
-                Forgot Password?
-              </button> */}
             </div>
-            {/* Website Input Field */}
             <div className="flex flex-col gap-2">
               <label
                 className="text-gray-700 text-sm font-bold"
@@ -182,10 +144,9 @@ const ProfilePage = () => {
               <input
                 type="url"
                 id="website"
-                // defaultValue={societyDetails?.websiteUrl}
                 {...register("websiteUrl")}
                 placeholder="https://societywebsite.com"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
               />
               {errors.websiteUrl?.message && (
                 <p className="font-normal text-sm text-red-500 pt-2">
@@ -193,31 +154,36 @@ const ProfilePage = () => {
                 </p>
               )}
             </div>
-            {/* Contact Information Section */}
             <div className="flex flex-col gap-2">
               <h3 className="text-lg font-bold text-gray-800">Contact</h3>
               <input
                 type="tel"
                 id=".phoneNumber"
-                // defaultValue={societyDetails?.phoneNumber}
                 {...register("phoneNumber")}
                 placeholder="Phone : (098) 765-4321"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
               />
               {errors.phoneNumber?.message && (
                 <p className="font-normal text-sm text-red-500 pt-2">
                   {errors.phoneNumber.message}
                 </p>
               )}
-              {/* <p className="text-gray-600">Phone 1: (123) 456-7890</p>
-              <p className="text-gray-600">Phone 2: (098) 765-4321</p> */}
-              <button
-                className="text-blue-500 hover:underline mt-2 self-start active:scale-90 transition-all"
-                type="submit"
-                disabled={clicked}
-              >
-                Edit
-              </button>
+              <div className="flex gap-8">
+                <button
+                  className="text-white bg-blue-500 hover:bg-blue-600 mt-4 py-2 px-6 rounded-lg self-start active:scale-95 transition-all"
+                  type="submit"
+                  disabled={clicked}
+                >
+                  Edit
+                </button>
+                <button
+                  className="text-white bg-blue-500 hover:bg-blue-600 mt-4 py-2 px-6 rounded-lg self-start active:scale-95 transition-all"
+                  type="button"
+                  onClick={() => navigate("/admin-dashboard")}
+                >
+                  Go to Dashboard
+                </button>
+              </div>
             </div>
           </div>
         </div>

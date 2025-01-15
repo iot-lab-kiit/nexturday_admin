@@ -3,15 +3,12 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router";
-
+import { loginSociety } from "../api/authApi";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    // .min(8, { message: "Password must be at least 8 characters long" }),
+  password: z.string(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -37,13 +34,7 @@ function Login() {
     console.log(data);
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/api/auth/society/login`,
-        {
-          email: data.email,
-          password: data.password,
-        }
-      );
+      const response = await loginSociety(data);
       console.log(response.data);
 
       if (response.status === 201) {
@@ -53,44 +44,17 @@ function Login() {
         sessionStorage.setItem("societyToken", token);
       } else {
         console.error("Error logging in");
-        setErrorMessage("Some error occured. Try again.");
+        setErrorMessage("Some error occurred. Try again.");
         setClicked(false);
       }
 
       navigate("/update-profile");
     } catch (error) {
       console.error("Error logging in:", error);
-      setErrorMessage("Some error occured. Try again.");
+      setErrorMessage("Some error occurred. Try again.");
       setClicked(false);
     }
-    // signin(data.email, data.password);
-
-   
   };
-
-  // const loginSociety = async (email, password) => {
-  //   try {
-  //     const response = await axios.post(
-  //       `${process.env.REACT_APP_API_URL}/api/auth/society/login`,
-  //       {
-  //         email,
-  //         password,
-  //       }
-  //     );
-
-  //     if (response.status === 201) {
-  //       console.log("Login successful");
-  //       // Handle the response data here
-  //       const token = response.data.data.accessToken;
-  //       // Store the token in local storage or a secure storage mechanism
-  //       localStorage.setItem("societyToken", token);
-  //     } else {
-  //       console.error("Error logging in");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error logging in:", error);
-  //   }
-  // };
 
   return (
     <>
@@ -100,20 +64,6 @@ function Login() {
             <h1 className="font-bold text-3xl pb-2 leading-8">
               Login to your account
             </h1>
-            {/* <p className="leading-5">
-              Continue tracking your progress after logging in to your account
-            </p>
-            <div className="py-9">
-              <button className="w-full border rounded-md p-2 font-semibold flex justify-center items-center gap-3 active:scale-95 transition-all">
-                <Icon icon="devicon:google" width="15" height="15" />
-                Login with Google
-              </button>
-            </div> 
-             <div className="flex justify-center items-center">
-              <hr className="w-full" />
-              <div className="px-2">or</div>
-              <hr className="w-full" />
-            </div> */}
             <form onSubmit={handleSubmit(login)} className="py-9 font-semibold">
               <div className="flex flex-col gap-6 pb-5">
                 <div>
@@ -167,28 +117,10 @@ function Login() {
                   )}
                 </div>
               </div>
-              {/* <div className="flex justify-between pt-5 pb-7 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    {...register("rememberMe")}
-                    name="rememberMe"
-                    id="rememberMe"
-                    className="h-4 w-4"
-                  />
-                  <label htmlFor="rememberMe">Remember me</label>
-                </div>
-                <a href="#" className="text-blue-500 active:text-blue-700">
-                  Forgot Password?
-                </a>
-              </div> */}
               <button
                 type="submit"
                 className="w-full flex items-center justify-center bg-blue-500 text-white p-2 rounded-md active:bg-blue-600 active:scale-95 transition-all"
                 disabled={clicked}
-                // onClick={()=>{
-                //   handleSignIn()
-                // }}
               >
                 {clicked ? (
                   <div>Logging in</div>
@@ -208,12 +140,6 @@ function Login() {
                 {errorMessage}
               </div>
             </form>
-            {/* <p className="font-semibold">
-              Dont have an account?{" "}
-              <a href="#" className="text-blue-500 active:text-blue-700">
-                Create one now.
-              </a>
-            </p> */}
           </div>
         </div>
         <div className="hidden md:block h-full w-[45%] p-6 pl-0">
