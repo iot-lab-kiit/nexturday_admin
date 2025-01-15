@@ -6,13 +6,11 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-// Zod schema for venue
 const venueSchema = z.object({
   mapUrl: z.string().url("Please enter a valid map URL"),
   name: z.string().min(1, "Venue name is required"),
 });
 
-// Zod schema for event details
 const detailSchema = z.object({
   name: z.string().min(1, "Detail name is required"),
   about: z.string().min(1, "Detail description is required"),
@@ -22,12 +20,10 @@ const detailSchema = z.object({
   venue: venueSchema,
 });
 
-// Main event schema
 const eventSchema = z.object({
   name: z.string().min(1, "Event name is required"),
   about: z.string().min(10, "About section must be at least 10 characters"),
   websiteUrl: z.string().url("Please enter a valid website URL"),
-  // Handle comma-separated strings for emails and phone numbers
   emails: z.string().min(1, "At least one email is required"),
   phoneNumbers: z.string().min(1, "At least one phone number is required"),
   registrationUrl: z.string().url("Please enter a valid registration URL"),
@@ -35,16 +31,12 @@ const eventSchema = z.object({
   from: z.string().min(1, "Start date is required"),
   to: z.string().min(1, "End date is required"),
   paid: z.boolean().default(false),
-  // Handle newline-separated guidelines
   guidlines: z.string().min(1, "At least one guideline is required"),
-  // Handle venue details
   venue: z.object({
     mapUrl: z.string().url("Please enter a valid map URL"),
     name: z.string().min(1, "Venue name is required"),
   }),
-  // Handle event type
   type: z.enum(["OFFLINE", "ONLINE"]),
-  // Handle session details
   sessionName: z.string().min(1, "Session name is required"),
   sessionAbout: z.string().min(1, "Session description is required"),
   sessionFrom: z.string().min(1, "Session start time is required"),
@@ -53,29 +45,19 @@ const eventSchema = z.object({
 
 type EventFormData = z.infer<typeof eventSchema>;
 
-// Update the form data type to handle guidelines array
-interface GuidelineField {
-  value: string;
-  id: string; // For React key prop
-}
-
-// Add this helper function at the top of the file, after imports
 const formatDateForInput = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
   
-  // Format the date manually to ensure correct format
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
 
-  // Return in format "yyyy-MM-ddThh:mm"
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-// Add this helper to convert back to UTC for API
 const formatDateForAPI = (dateString: string) => {
   if (!dateString) return '';
   return new Date(dateString).toISOString();
@@ -86,7 +68,6 @@ const EditEvent = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [guidelines, setGuidelines] = useState<GuidelineField[]>([{ value: '', id: '1' }]);
 
   const {
     register,
@@ -99,29 +80,36 @@ const EditEvent = () => {
     mode: "onChange",
   });
 
-  // Fetch existing event data
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/events/${id}`);
         const eventData = response.data.data;
-        
-        // Set form values
-        Object.keys(eventData).forEach((key) => {
-          if (key === 'guidlines') {
-            setGuidelines(
-              eventData.guidlines.map((guideline: string, index: number) => ({
-                value: guideline,
-                id: (index + 1).toString()
-              }))
-            );
-          } else if (key === 'from' || key === 'to') {
-            // Format dates for datetime-local input
-            setValue(key, formatDateForInput(eventData[key]));
-          } else if (key in eventSchema.shape) {
-            setValue(key as keyof EventFormData, eventData[key]);
+        setValue("name", eventData.name);
+        setValue("about", eventData.about);
+        setValue("websiteUrl", eventData.websiteUrl);
+        setValue("emails", eventData.emails.join(", "));
+        setValue("phoneNumbers", eventData.phoneNumbers.join(", "));
+        setValue("registrationUrl", eventData.registrationUrl);
+        setValue("paid", eventData.paid);
+        setValue("price", eventData.price);
+        setValue("from", formatDateForInput(eventData.from));
+        setValue("to", formatDateForInput(eventData.to));
+        setValue("guidlines", eventData.guidlines.join("\n"));
+
+        if (eventData.details && eventData.details[0]) {
+          const session = eventData.details[0];
+          setValue("sessionName", session.name);
+          setValue("sessionAbout", session.about);
+          setValue("sessionFrom", formatDateForInput(session.from));
+          setValue("sessionTo", formatDateForInput(session.to));
+          setValue("type", session.type);
+          
+          if (session.venue) {
+            setValue("venue.mapUrl", session.venue.mapUrl);
+            setValue("venue.name", session.venue.name);
           }
-        });
+        }
       } catch (error) {
         console.error("Error fetching event:", error);
         toast.error("Failed to load event data");
@@ -133,55 +121,40 @@ const EditEvent = () => {
     fetchEvent();
   }, [id, setValue]);
 
-  // Add guideline field
-  const addGuideline = () => {
-    setGuidelines([
-      ...guidelines,
-      { value: '', id: (guidelines.length + 1).toString() }
-    ]);
-  };
-
-  // Remove guideline field
-  const removeGuideline = (idToRemove: string) => {
-    if (guidelines.length > 1) {
-      setGuidelines(guidelines.filter(g => g.id !== idToRemove));
-    }
-  };
-
-  // Update guideline value
-  const updateGuideline = (id: string, value: string) => {
-    setGuidelines(
-      guidelines.map(g => (g.id === id ? { ...g, value } : g))
-    );
-  };
-
   const onSubmit = async (data: EventFormData) => {
-    console.log("Form Data:", data);
-    
     if (Object.keys(errors).length > 0) {
-      console.log("Validation Errors:", errors);
       toast.error("Please fix all form errors before submitting");
       return;
     }
 
     setSubmitting(true);
     try {
-      // Convert form data to API format
       const formData = {
-        ...data,
+        name: data.name,
+        about: data.about,
+        websiteUrl: data.websiteUrl,
+        emails: data.emails.split(',').map(email => email.trim()),
+        guidlines: data.guidlines.split('\n').filter(line => line.trim()),
+        phoneNumbers: data.phoneNumbers.split(',').map(phone => phone.trim()),
+        registrationUrl: data.registrationUrl,
+        price: data.paid ? data.price : 0,
         from: formatDateForAPI(data.from),
         to: formatDateForAPI(data.to),
-        emails: data.emails.split(',').map(email => email.trim()),
-        phoneNumbers: data.phoneNumbers.split(',').map(phone => phone.trim()),
-        guidlines: data.guidlines.split('\n').filter(line => line.trim()),
-        details: [{
-          name: data.sessionName,
-          about: data.sessionAbout,
-          from: formatDateForAPI(data.sessionFrom),
-          to: formatDateForAPI(data.sessionTo),
-          type: data.type,
-          venue: data.venue
-        }]
+        paid: data.paid,
+        details: [
+          {
+            name: data.sessionName,
+            about: data.sessionAbout,
+            from: formatDateForAPI(data.sessionFrom),
+            to: formatDateForAPI(data.sessionTo),
+            type: data.type,
+            venue: {
+              mapUrl: data.venue.mapUrl,
+              name: data.venue.name
+            }
+          }
+        ],
+        imagesKeys: [] 
       };
       
       await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/events/${id}`, formData);
@@ -201,297 +174,348 @@ const EditEvent = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-10">Loading event data...</div>;
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-700">
+          <svg className="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <span className="text-xl font-medium">Loading event data...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
-        <h1 className="text-2xl font-bold mb-6">Edit Event</h1>
-
-        {Object.keys(errors).length > 0 && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-            <h3 className="text-red-800 font-medium mb-2">Please fix the following errors:</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              {Object.entries(errors).map(([key, error]) => (
-                <li key={key} className="text-red-600 text-sm">
-                  {key}: {error?.message as string}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8">
-          {/* Basic Information */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold border-b pb-2">Basic Information</h2>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Event Name</label>
-                <input
-                  type="text"
-                  {...register("name")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">About</label>
-                <textarea
-                  {...register("about")}
-                  rows={4}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.about && <p className="mt-1 text-sm text-red-600">{errors.about.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Website URL</label>
-                <input
-                  type="url"
-                  {...register("websiteUrl")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.websiteUrl && <p className="mt-1 text-sm text-red-600">{errors.websiteUrl.message}</p>}
-              </div>
-            </div>
-          </section>
-
-          {/* Contact Information */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold border-b pb-2">Contact Information</h2>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Emails (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  {...register("emails")}
-                  placeholder="email1@example.com, email2@example.com"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.emails && <p className="mt-1 text-sm text-red-600">{errors.emails.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Phone Numbers (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  {...register("phoneNumbers")}
-                  placeholder="+1234567890, +0987654321"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.phoneNumbers && <p className="mt-1 text-sm text-red-600">{errors.phoneNumbers.message}</p>}
-              </div>
-            </div>
-          </section>
-
-          {/* Event Details */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold border-b pb-2">Event Details</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Start Date & Time</label>
-                <input
-                  type="datetime-local"
-                  {...register("from")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.from && <p className="mt-1 text-sm text-red-600">{errors.from.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">End Date & Time</label>
-                <input
-                  type="datetime-local"
-                  {...register("to")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.to && <p className="mt-1 text-sm text-red-600">{errors.to.message}</p>}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Registration URL</label>
-              <input
-                type="url"
-                {...register("registrationUrl")}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-              {errors.registrationUrl && <p className="mt-1 text-sm text-red-600">{errors.registrationUrl.message}</p>}
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  {...register("paid")}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label className="ml-2 block text-sm text-gray-900">Paid Event</label>
-              </div>
-
-              {watch("paid") && (
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700">Price</label>
-                  <input
-                    type="number"
-                    {...register("price", { valueAsNumber: true })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                  {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Session Details */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold border-b pb-2">Session Details</h2>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Session Name</label>
-                <input
-                  type="text"
-                  {...register("sessionName")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.sessionName && <p className="mt-1 text-sm text-red-600">{errors.sessionName.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Session Description</label>
-                <textarea
-                  {...register("sessionAbout")}
-                  rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.sessionAbout && <p className="mt-1 text-sm text-red-600">{errors.sessionAbout.message}</p>}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Session Start Time</label>
-                  <input
-                    type="datetime-local"
-                    {...register("sessionFrom")}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                  {errors.sessionFrom && <p className="mt-1 text-sm text-red-600">{errors.sessionFrom.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Session End Time</label>
-                  <input
-                    type="datetime-local"
-                    {...register("sessionTo")}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                  {errors.sessionTo && <p className="mt-1 text-sm text-red-600">{errors.sessionTo.message}</p>}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Event Type</label>
-                <select
-                  {...register("type")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="OFFLINE">Offline</option>
-                  <option value="ONLINE">Online</option>
-                </select>
-                {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>}
-              </div>
-            </div>
-          </section>
-
-          {/* Venue Details */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold border-b pb-2">Venue Details</h2>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Venue Name</label>
-                <input
-                  type="text"
-                  {...register("venue.name")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.venue?.name && <p className="mt-1 text-sm text-red-600">{errors.venue.name.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Map URL</label>
-                <input
-                  type="url"
-                  {...register("venue.mapUrl")}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                {errors.venue?.mapUrl && <p className="mt-1 text-sm text-red-600">{errors.venue.mapUrl.message}</p>}
-              </div>
-            </div>
-          </section>
-
-          {/* Guidelines */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold border-b pb-2">Guidelines</h2>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Guidelines (one per line)
-              </label>
-              <textarea
-                {...register("guidlines")}
-                rows={4}
-                placeholder="Enter each guideline on a new line"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-              {errors.guidlines && <p className="mt-1 text-sm text-red-600">{errors.guidlines.message}</p>}
-            </div>
-          </section>
-
-          {/* Submit Button */}
-          <div className="flex justify-end gap-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="p-6 bg-gray-800 text-white">
             <button
-              type="button"
               onClick={() => navigate(`/events/${id}`)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-              disabled={submitting}
+              className="flex items-center gap-2 text-white/80 hover:text-white mb-4"
             >
-              Cancel
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Back to Event</span>
             </button>
-            <button
-              type="submit"
-              disabled={submitting || Object.keys(errors).length > 0}
-              className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
-                submitting || Object.keys(errors).length > 0
-                  ? 'bg-blue-300 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {submitting ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Updating...
-                </span>
-              ) : (
-                'Update Event'
-              )}
-            </button>
+            <h1 className="text-3xl font-bold">Edit Event</h1>
           </div>
-        </form>
+
+          {Object.keys(errors).length > 0 && (
+            <div className="p-4 m-6 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="text-red-800 font-medium mb-2 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Please fix the following errors:
+              </h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {Object.entries(errors).map(([key, error]) => (
+                  <li key={key} className="text-red-600 text-sm">
+                    {key}: {error?.message as string}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit, onError)} className="p-6 space-y-8">
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Basic Information
+              </div>
+              <div className="grid grid-cols-1 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
+                  <input
+                    type="text"
+                    {...register("name")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">About</label>
+                  <textarea
+                    {...register("about")}
+                    rows={4}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.about && <p className="mt-1 text-sm text-red-600">{errors.about.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                  <input
+                    type="url"
+                    {...register("websiteUrl")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.websiteUrl && <p className="mt-1 text-sm text-red-600">{errors.websiteUrl.message}</p>}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Contact Information
+              </div>
+              <div className="grid grid-cols-1 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Emails (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    {...register("emails")}
+                    placeholder="email1@example.com, email2@example.com"
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.emails && <p className="mt-1 text-sm text-red-600">{errors.emails.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Numbers (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    {...register("phoneNumbers")}
+                    placeholder="+1234567890, +0987654321"
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.phoneNumbers && <p className="mt-1 text-sm text-red-600">{errors.phoneNumbers.message}</p>}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Event Details
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    {...register("from")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.from && <p className="mt-1 text-sm text-red-600">{errors.from.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    {...register("to")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.to && <p className="mt-1 text-sm text-red-600">{errors.to.message}</p>}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration URL</label>
+                  <input
+                    type="url"
+                    {...register("registrationUrl")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.registrationUrl && <p className="mt-1 text-sm text-red-600">{errors.registrationUrl.message}</p>}
+                </div>
+
+                <div className="md:col-span-2 flex items-center gap-6">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      {...register("paid")}
+                      className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label className="ml-2 text-sm text-gray-900">Paid Event</label>
+                  </div>
+
+                  {watch("paid") && (
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                      <input
+                        type="number"
+                        {...register("price", { valueAsNumber: true })}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                      {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Session Details
+              </div>
+              <div className="grid grid-cols-1 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Session Name</label>
+                  <input
+                    type="text"
+                    {...register("sessionName")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.sessionName && <p className="mt-1 text-sm text-red-600">{errors.sessionName.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Session Description</label>
+                  <textarea
+                    {...register("sessionAbout")}
+                    rows={3}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.sessionAbout && <p className="mt-1 text-sm text-red-600">{errors.sessionAbout.message}</p>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Session Start Time</label>
+                    <input
+                      type="datetime-local"
+                      {...register("sessionFrom")}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {errors.sessionFrom && <p className="mt-1 text-sm text-red-600">{errors.sessionFrom.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Session End Time</label>
+                    <input
+                      type="datetime-local"
+                      {...register("sessionTo")}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {errors.sessionTo && <p className="mt-1 text-sm text-red-600">{errors.sessionTo.message}</p>}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+                  <select
+                    {...register("type")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="OFFLINE">Offline</option>
+                    <option value="ONLINE">Online</option>
+                  </select>
+                  {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Venue Details
+              </div>
+              <div className="grid grid-cols-1 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Venue Name</label>
+                  <input
+                    type="text"
+                    {...register("venue.name")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.venue?.name && <p className="mt-1 text-sm text-red-600">{errors.venue.name.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Map URL</label>
+                  <input
+                    type="url"
+                    {...register("venue.mapUrl")}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {errors.venue?.mapUrl && <p className="mt-1 text-sm text-red-600">{errors.venue.mapUrl.message}</p>}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Guidelines
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Guidelines (one per line)
+                </label>
+                <textarea
+                  {...register("guidlines")}
+                  rows={4}
+                  placeholder="Enter each guideline on a new line"
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+                {errors.guidlines && <p className="mt-1 text-sm text-red-600">{errors.guidlines.message}</p>}
+              </div>
+            </section>
+
+            <div className="flex justify-end gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => navigate(`/events/${id}`)}
+                className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || Object.keys(errors).length > 0}
+                className={`px-6 py-2.5 text-sm font-medium text-white rounded-lg flex items-center gap-2
+                  ${submitting || Object.keys(errors).length > 0
+                    ? 'bg-blue-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  }`}
+              >
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>Update Event</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

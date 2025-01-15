@@ -53,9 +53,7 @@ const EventDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Container wrapper */}
       <div className="max-w-4xl mx-auto min-h-screen lg:my-8 bg-white lg:rounded-xl overflow-hidden relative">
-        {/* Background Image with Gradient - Full height on mobile, fixed height on desktop */}
         <div className="h-[300px] md:h-[400px] relative">
           <img
             src={event.images[0]?.url}
@@ -64,7 +62,6 @@ const EventDetails = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           
-          {/* Header Content overlaying the image */}
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <div className="text-white/80 text-xl mb-2">
               {event.society.name}
@@ -75,7 +72,6 @@ const EventDetails = () => {
           </div>
         </div>
 
-        {/* Back Button - Fixed position on mobile, absolute on desktop */}
         <button 
           onClick={() => window.history.back()}
           className="fixed lg:absolute top-4 left-4 z-10 text-white/90 flex items-center gap-2 hover:text-white"
@@ -86,9 +82,7 @@ const EventDetails = () => {
           <span className="text-sm font-medium">Back</span>
         </button>
 
-        {/* Main Content */}
         <div className="p-6 space-y-6 text-gray-800">
-          {/* Time and Location */}
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,13 +105,11 @@ const EventDetails = () => {
             </div>
           </div>
 
-          {/* About Section */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h2 className="text-xl font-semibold mb-3">About</h2>
             <p className="text-gray-700">{event.about}</p>
           </div>
 
-          {/* Contact Information */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
             <div className="space-y-2">
@@ -136,7 +128,6 @@ const EventDetails = () => {
             </div>
           </div>
 
-          {/* Guidelines */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h2 className="text-xl font-semibold mb-3">Guidelines</h2>
             <ul className="list-disc pl-5 space-y-2 text-gray-700">
@@ -146,7 +137,6 @@ const EventDetails = () => {
             </ul>
           </div>
 
-          {/* Registration Information */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h2 className="text-xl font-semibold mb-3">Registration Details</h2>
             <div className="space-y-2">
@@ -166,7 +156,6 @@ const EventDetails = () => {
             </div>
           </div>
 
-          {/* Participants Button */}
           <div className="flex justify-center pt-4 pb-8">
             <button
               onClick={() => navigate(`/events/${event.id}/participants`)}

@@ -67,7 +67,6 @@ const ParticipantsTable = () => {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Participants List</h1>
         
-        {/* Table */}
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -129,7 +128,6 @@ const ParticipantsTable = () => {
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-gray-700">
             Page {participants.currentPage} of {participants.totalPages}
