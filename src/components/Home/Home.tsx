@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdGroups, MdEventAvailable } from "react-icons/md";
+import { MdEventAvailable } from "react-icons/md";
 import { RiShutDownLine } from "react-icons/ri";
 import { FaPlus } from "react-icons/fa6";
 import { Menu, UserRoundPen, X } from "lucide-react";
-import SocietyPage from "../Society/SocietyPage";
 import EventPage from "../Events/EventPage";
 import { Separator } from "../ui/separator";
 import { getUserEmail } from "@/api/email";
+import { checkUser } from "@/api/checkUser";
 
 function Home() {
-  const [selectedTab, setSelectedTab] = useState<"societies" | "events" | "home" | "AddEvent">("home");
+  const [selectedTab, setSelectedTab] = useState<
+    "societies" | "events" | "home" | "AddEvent"
+  >("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -18,7 +20,23 @@ function Home() {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkUserLoggedIn = async () => {
+      try {
+        const response = await checkUser();
+        if (response) {
+          setIsLoggedin(true);
+        } else {
+          setIsLoggedin(false);
+        }
+      } catch (error) {
+        console.error("Error fetching user email:", error);
+        setIsLoggedin(false);
+      }
+    };
 
+    checkUserLoggedIn();
+  });
 
   useEffect(() => {
     const fetchUserEmail = async () => {
@@ -60,14 +78,7 @@ function Home() {
             </p>
           </div>
           <Separator />
-          <div className="w-full h-[15vh] p-2 mb-2">
-            <div
-              onClick={() => setSelectedTab("societies")}
-              className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
-            >
-              <MdGroups />
-              <p>My Society</p>
-            </div>
+          <div className="w-full h-fit p-2 mb-2">
             <div
               onClick={() => setSelectedTab("events")}
               className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
@@ -75,21 +86,21 @@ function Home() {
               <MdEventAvailable />
               <p>Events</p>
             </div>
+            <div
+              onClick={() => navigate("/add-event")}
+              className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
+            >
+              <FaPlus className="text-xl" />
+              <p>Add Events</p>
+            </div>
           </div>
           <Separator />
-          <div
-            onClick={() => navigate("/add-event")}
-            className="text-sm border-[1px] rounded-full m-2 py-1 px-2 w-fit mx-auto flex flex-row gap-2 items-center justify-center mt-4 text-blue-400 cursor-pointer hover:text-white"
-          >
-            <FaPlus className="text-xl" />
-            <p>Add Events</p>
-          </div>
         </div>
         <Separator />
         <div className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
           <UserRoundPen className="text-sm" />
           <p onClick={() => navigate("/profile")} className="py-1 mx-auto">
-            My Profile
+            Edit Profile
           </p>
         </div>
         <Separator />
@@ -98,6 +109,7 @@ function Home() {
             onClick={() => {
               sessionStorage.removeItem("societyToken");
               setIsLoggedin(false);
+              navigate("/");
             }}
             className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
           >
@@ -106,7 +118,7 @@ function Home() {
           </div>
         ) : (
           <div
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/")}
             className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
           >
             <RiShutDownLine />
@@ -130,7 +142,6 @@ function Home() {
             <p className="text-gray-500">Select a section from the sidebar.</p>
           </div>
         )}
-        {selectedTab === "societies" && <SocietyPage />}
         {selectedTab === "events" && <EventPage />}
       </div>
     </div>
