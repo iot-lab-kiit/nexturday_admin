@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-type EventType = "online" | "offline";
+// import { CreateEvent } from "@/api/eventsApi";
+import { MdDelete } from "react-icons/md";
+import toast from "react-hot-toast";
+import { CreateEvent } from "@/api/eventsApi";
+type EventType = "ONLINE" | "OFFLINE";
 
 interface VenueType {
   name: string;
@@ -24,46 +26,79 @@ interface FormDataType {
   eventType: EventType;
   fromDate: string;
   toDate: string;
-  venueName: string;
-  mapUrl?: string; // Optional
-  website?: string; // Optional
+  website?: string;
   emails: string[];
   contactNumbers: string[];
-  registrationUrl: string;
+  registrationUrl?: string;
   isPaidEvent: boolean;
-  price?: number; // Optional
-  participantCount?: number; // Optional
+  price?: number;
+  deadline: string;
   selectedFile: File | null;
-  optionalImageFile: File | null;
-  details: DetailType[]; // Added
+  details: DetailType[];
 }
+
+interface ConfirmationModalProps {
+  isOpen: boolean; // Determines if the modal is visible
+  onClose: () => void; // Function to close the modal
+  onConfirm: () => void; // Function to confirm the action
+  message: string; // Message to display in the modal
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  message,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white w-96 rounded-lg shadow-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-800">Are you sure?</h2>
+        <p className="text-sm text-gray-600 mt-2">{message}</p>
+        <div className="mt-4 flex justify-end gap-4">
+          <button
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none"
+            onClick={onConfirm}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AddEvent: React.FC = () => {
   const [formData, setFormData] = useState<FormDataType>({
     eventName: "",
     about: "",
     guidelines: [""],
-    eventType: "online",
+    eventType: "ONLINE",
     fromDate: "",
     toDate: "",
-    venueName: "",
-    mapUrl: "",
     website: "",
     emails: [""],
     contactNumbers: [""],
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
-    participantCount: 0,
+    deadline: "",
     selectedFile: null,
-    optionalImageFile: null,
     details: [
       {
         name: "",
         about: "",
         from: "",
         to: "",
-        type: "online",
+        type: "ONLINE",
         venue: {
           name: "",
           mapUrl: "",
@@ -71,6 +106,9 @@ const AddEvent: React.FC = () => {
       },
     ],
   });
+
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -99,7 +137,7 @@ const AddEvent: React.FC = () => {
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof Pick<FormDataType, "selectedFile" | "optionalImageFile">
+    key: keyof Pick<FormDataType, "selectedFile">
   ) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -109,8 +147,6 @@ const AddEvent: React.FC = () => {
       }));
     }
   };
-
-  // const handleOptionalFileChange = (
   //   event: React.ChangeEvent<HTMLInputElement>
   // ) => {
   //   const file = event.target.files?.[0];
@@ -196,78 +232,92 @@ const AddEvent: React.FC = () => {
     }));
   };
 
-  const handleDetailFieldChange = (index, field, value, subField = null) => {
+  const handleDetailFieldChange = (
+    index: number,
+    field: keyof DetailType,
+    value: string | EventType,
+    subField?: keyof VenueType
+  ) => {
     setFormData((prevState) => {
       const updatedDetails = [...prevState.details];
-      if (subField) {
-        updatedDetails[index][field][subField] = value;
-      } else {
-        updatedDetails[index][field] = value;
+
+      if (field === "venue" && subField) {
+        updatedDetails[index].venue[subField] = value as string;
+      } else if (field === "type") {
+        updatedDetails[index].type = value as EventType;
+      } else if (field !== "venue") {
+        updatedDetails[index][field] = value as DetailType[typeof field];
       }
+
       return { ...prevState, details: updatedDetails };
     });
-  };
-
-  const addSubEvent = () => {
-    setFormData((prevState) => ({
-      ...prevState,
-      details: [
-        ...prevState.details,
-        {
-          name: "",
-          about: "",
-          from: "",
-          to: "",
-          type: "online",
-          venue: {
-            name: "",
-            mapUrl: "",
-          },
-        },
-      ],
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { isPaidEvent, website, price, eventName, about, registrationUrl } =
-      formData;
-
     console.log("formData", formData);
+    const {
+      eventName,
+      about,
+      guidelines,
+      eventType,
+      fromDate,
+      toDate,
+      emails,
+      contactNumbers,
+      isPaidEvent,
+      price,
+      deadline,
+      details,
+      website,
+      registrationUrl,
+    } = formData;
 
-    // Validation checks
-    if (!eventName.trim()) {
-      toast.error("Event name is required!");
+    // General check for empty fields
+    if (
+      !eventName.trim() ||
+      !about.trim() ||
+      !eventType.trim() ||
+      !fromDate.trim() ||
+      !toDate.trim() ||
+      !deadline.trim() ||
+      guidelines.some((g) => !g.trim()) ||
+      emails.some((email) => !email.trim()) ||
+      contactNumbers.some((number) => !number.trim())
+    ) {
+      toast.error("Please fill in all required fields!");
       return;
     }
 
-    if (!about.trim()) {
-      toast.error("Event description is required!");
+    if (new Date(fromDate) > new Date(toDate)) {
+      toast.error("Event start date cannot be later than the end date!");
       return;
     }
 
-    if (!registrationUrl.trim()) {
-      toast.error("Registration URL is required!");
+    if (new Date(deadline) >= new Date(toDate)) {
+      toast.error(
+        "Registration deadline must be earlier than the event end date!"
+      );
       return;
     }
 
-    if (formData.details.length === 0) {
-      toast.error("At least one sub-event is required!");
-      return;
-    }
-
-    for (const [index, detail] of formData.details.entries()) {
-      if (!detail.name.trim()) {
-        toast.error(`Sub Event ${index + 1} must have a name!`);
+    // Check each sub-event
+    for (const [index, detail] of details.entries()) {
+      if (!detail.name.trim() || !detail.about.trim()) {
+        toast.error(`Sub Event ${index + 1} is missing required fields!`);
         return;
       }
-      if (!detail.about.trim()) {
-        toast.error(`Sub Event ${index + 1} must have a description!`);
-        return;
-      }
-      if (!detail.from || !detail.to) {
+
+      if (!detail.from.trim() || !detail.to.trim()) {
         toast.error(`Sub Event ${index + 1} must have valid dates!`);
+        return;
+      }
+
+      if (new Date(detail.from) > new Date(detail.to)) {
+        toast.error(
+          `Sub Event ${index + 1} start date cannot be later than its end date!`
+        );
         return;
       }
     }
@@ -279,8 +329,15 @@ const AddEvent: React.FC = () => {
         );
         return;
       }
-      if (!website.trim()) {
+
+      if (!website || !website.trim()) {
         toast.error("Website URL is required for paid events!");
+        return;
+      }
+
+      if (!registrationUrl || !registrationUrl.trim()) {
+        // Check for `undefined` or empty value
+        toast.error("Registration URL is required for paid events!");
         return;
       }
     }
@@ -294,11 +351,13 @@ const AddEvent: React.FC = () => {
     formDataToSend.append("name", eventName);
     formDataToSend.append("about", about);
     formDataToSend.append("websiteUrl", website || "");
-    formDataToSend.append("registrationUrl", registrationUrl);
-    formDataToSend.append("price", isPaidEvent ? price.toString() : "0");
+    formDataToSend.append("registrationUrl", registrationUrl || "");
+
+    formDataToSend.append("price", isPaidEvent ? String(price) : "0");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
+    formDataToSend.append("deadline", formData.deadline);
 
     formData.emails.forEach((email) => formDataToSend.append("emails", email));
     formData.guidelines.forEach((g) => formDataToSend.append("guidlines", g));
@@ -316,16 +375,7 @@ const AddEvent: React.FC = () => {
     const toastId = toast.loading("Submitting form...");
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/api/events`,
-        formDataToSend,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
-          },
-        }
-      );
+      const response = await CreateEvent(formDataToSend);
 
       toast.dismiss(toastId); // Dismiss the loader
       toast.success("Form submitted successfully!");
@@ -337,6 +387,39 @@ const AddEvent: React.FC = () => {
       console.error("Error:", error);
       throw error;
     }
+  };
+
+  const addSubEvent = () => {
+    setFormData((prevState) => ({
+      ...prevState,
+      details: [
+        ...prevState.details,
+        {
+          name: "",
+          about: "",
+          from: "",
+          to: "",
+          type: "ONLINE",
+          venue: {
+            name: "",
+            mapUrl: "",
+          },
+        },
+      ],
+    }));
+  };
+
+  const removeSubEvent = (index: number) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      details: prevState.details.filter((_, i) => i !== index),
+    }));
+    setModalOpen(false);
+  };
+
+  const confirmDelete = (index: number) => {
+    setDeleteIndex(index);
+    setModalOpen(true);
   };
 
   return (
@@ -551,7 +634,7 @@ const AddEvent: React.FC = () => {
                 From <span className="text-red-500 ml-1">*</span>
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 id="fromDate"
                 value={formData.fromDate}
                 onChange={handleInputChange}
@@ -566,7 +649,7 @@ const AddEvent: React.FC = () => {
                 To <span className="text-red-500 ml-1">*</span>
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 id="toDate"
                 value={formData.toDate}
                 onChange={handleInputChange}
@@ -616,14 +699,15 @@ const AddEvent: React.FC = () => {
                 className="text-gray-700 text-sm font-bold"
                 htmlFor="participantCount"
               >
-                Participant Count <span className="text-red-500 ml-1">*</span>
+                Registration Deadline{" "}
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <input
-                type="number"
-                id="participantCount"
-                value={formData.participantCount}
+                type="datetime-local"
+                id="deadline"
+                value={formData.deadline}
                 onChange={handleInputChange}
-                placeholder="Enter expected participant count"
+                placeholder="Enter  Registration Deadline  "
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
               />
             </div>
@@ -649,7 +733,16 @@ const AddEvent: React.FC = () => {
 
           {/* Details Section */}
           {formData.details.map((detail, index) => (
-            <div key={index} className="flex flex-col gap-4">
+            <div key={index} className="flex flex-col gap-4 relative">
+              {formData.details.length > 1 && index !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => confirmDelete(index)}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-700 focus:outline-none"
+                >
+                  <MdDelete size={24} />
+                </button>
+              )}
               <h4 className="text-gray-700 text-sm font-bold">
                 Details (Sub Event {index + 1})
               </h4>
@@ -780,6 +873,18 @@ const AddEvent: React.FC = () => {
           >
             Add More Sub-Events
           </button>
+
+          {/* Confirmation Modal */}
+          <ConfirmationModal
+            isOpen={isModalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={() => {
+              if (deleteIndex !== null) {
+                removeSubEvent(deleteIndex); // Only proceed if deleteIndex is valid
+              }
+            }}
+            message="This action cannot be undone. Do you want to proceed?"
+          />
 
           {/* Submit Button */}
           <button
