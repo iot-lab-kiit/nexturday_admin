@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
 import { updateSocietyProfile } from "../api/societyApi";
+import { fetchProfile } from "@/api/fetchProfileApi";
 
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -30,10 +31,13 @@ const ProfilePage = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  
 
   const onSubmit = async (data: FormData) => {
     setClicked(true);
