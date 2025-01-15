@@ -1,77 +1,90 @@
+import { getSocietyProfile, updateSocietyProfile } from "@/api/societyApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
 
 const schema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  description: z.string(),
-  email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" }),
-  websiteUrl: z.string().url({ message: "Enter valid url" }),
-  phoneNumber: z
-    .string()
-    .regex(
-      /^\s*(?:\+?(\d{1,3}))?([-. (]*(\d{3})[-. )]*)?((\d{3})[-. ]*(\d{2,4})(?:[-.x ]*(\d+))?)\s*$/gm,
-      "Enter valid phone number"
-    ),
+  name: z.string(),
+  // .min(3, "Name must be at least 3 characters"),
+  password: z.string(),
+  // .min(8, { message: "Password must be at least 8 characters long" }),
+  websiteUrl: z.string(),
+  // .url({ message: "Enter valid url" }),
+  phoneNumber: z.string(),
+  // .regex(
+  //   /^\s*(?:\+?(\d{1,3}))?([-. (]*(\d{3})[-. )]*)?((\d{3})[-. ]*(\d{2,4})(?:[-.x ]*(\d+))?)\s*$/gm,
+  //   "Enter valid phone number"
+  // ),
 });
 
 type FormData = z.infer<typeof schema>;
 
 const ProfilePage = () => {
   const [clicked, setClicked] = useState(false);
-  // const [societyDetails, setSocietyDetails] = useState<FormData>();
+  const [societyDetails, setSocietyDetails] = useState<FormData>();
+  const [email, setEmail] = useState("");
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getProfile();
+  }, []);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
-  const updateSocietyProfile = async (data: FormData) => {
+  const getProfile = async () => {
     setClicked(true);
     try {
-      const response = await axios.patch(
-        `${import.meta.env.VITE_BASE_URL}/api/society`,
-        {
-          name: data.name,
-          desc: data.description,
-          websiteUrl: data.websiteUrl,
-          email: data.email,
-          password: data.password,
-          phoneNumber: data.phoneNumber,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
-          },
-        }
-      );
+      const response = await getSocietyProfile();
+      console.log(response);
+      setSocietyDetails(response.data.data);
+      setValue("name", response.data.data.name);
+      setEmail(response.data.data.email);
+      setValue("password", response.data.data.password);
+      setValue("websiteUrl", response.data.data.websiteUrl);
+      setValue("phoneNumber", response.data.data.phoneNumber);
+    } catch (error) {
+      console.error("Error fetching society profile:", error);
+      throw error;
+    }
+  };
+
+  const updateProfile = async (data: FormData,e:any) => {
+    e.preventDefault();
+    setClicked(true);
+    console.log("hkj", data);
+    try {
+      const response = await updateSocietyProfile(data);
       console.log(response);
 
       if (response.status === 200) {
         console.log("updated successfully");
       } else {
         console.error("Error updating");
+
       }
-      navigate("/");
+      navigate("/admin-dashboard");
     } catch (error) {
       console.error("Error updating:", error);
     }
   };
   return (
     <form
-      onSubmit={handleSubmit(updateSocietyProfile)}
+      onSubmit={handleSubmit(updateProfile)}
+      // onSubmit={(e:any) => {
+      //   e.preventDefault();
+      //   console.log("clicked");
+      // }}
       className="min-h-screen bg-gray-100 flex justify-center items-center px-4 py-8"
     >
       {/* Container for the profile page */}
@@ -107,12 +120,6 @@ const ProfilePage = () => {
               </p>
             )}
           </h2>
-          <textarea
-            className="w-full text-justify border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-            placeholder="This is a brief description about the society. It can be 2-3 lines long."
-            // defaultValue={societyDetails?.description}
-            {...register("description")}
-          ></textarea>
         </div>
 
         {/* Right Section: Admin Details Form */}
@@ -128,19 +135,13 @@ const ProfilePage = () => {
               >
                 Email
               </label>
-              <input
+              <div
                 id="email"
-                type="email"
                 // defaultValue={societyDetails?.email}
-                {...register("email")}
-                placeholder="admin@email.com"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-              />
-              {errors.email?.message && (
-                <p className="font-normal text-sm text-red-500 pt-2">
-                  {errors.email.message}
-                </p>
-              )}
+              >
+                {email}
+              </div>
             </div>
             {/* Password Input Field with Forgot Password Link */}
             <div className="flex items-center gap-4">
@@ -215,17 +216,18 @@ const ProfilePage = () => {
                 <button
                   className="text-blue-500 hover:underline mt-2 self-start active:scale-90 transition-all"
                   type="submit"
-                  disabled={clicked}
+                  // disabled={clicked}
+                 
                 >
                   Edit
                 </button>
                 {/* cancel button */}
-                <button
+                <div
                   onClick={() => navigate("/admin-dashboard")}
                   className="text-blue-500 hover:underline mt-2 self-start"
                 >
                   Cancel
-                </button>
+                </div>
               </div>
             </div>
           </div>

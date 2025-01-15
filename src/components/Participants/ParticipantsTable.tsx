@@ -37,6 +37,46 @@ const ParticipantsTable = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Custom function to convert data to CSV
+  const convertToCSV = (data: Participant[]) => {
+    const headers = [
+      "Name",
+      "Roll No",
+      "Branch",
+      "Year",
+      "Contact",
+      "Registration Date",
+      "Registration Time",
+    ];
+    const rows = data.map((participant) => [
+      participant.participant.detail.name,
+      participant.participant.rollNo,
+      participant.participant.detail.branch,
+      participant.participant.detail.studyYear,
+      participant.participant.detail.phoneNumber,
+      new Date(participant.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    ]);
+    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+    return csvContent;
+  };
+  const downloadCSV = () => {
+    if (!participants) return;
+    const csvContent = convertToCSV(participants.data);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `participants_page_${currentPage}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     const fetchParticipants = async () => {
       setLoading(true);
@@ -160,6 +200,14 @@ const ParticipantsTable = () => {
               } border`}
             >
               Next
+            </button>
+          </div>
+          <div className="mt-4 text-right">
+            <button
+              onClick={downloadCSV}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Download CSV
             </button>
           </div>
         </div>
