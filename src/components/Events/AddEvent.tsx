@@ -146,16 +146,6 @@ const AddEvent: React.FC = () => {
       }));
     }
   };
-  //   event: React.ChangeEvent<HTMLInputElement>
-  // ) => {
-  //   const file = event.target.files?.[0];
-  //   if (!file) return;
-
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     optionalImageFile: file,
-  //   }));
-  // };
 
   const handleAddGuideline = () => {
     setFormData((prev) => ({
@@ -294,14 +284,14 @@ const AddEvent: React.FC = () => {
       return;
     }
 
-    // if (new Date(deadline) >= new Date(toDate)) {
-    //   toast.error(
-    //     "Registration deadline must be earlier than the event end date!"
-    //   );
-    //   return;
-    // }
+    if (new Date(deadline) >= new Date(toDate)) {
+      toast.error(
+        "Registration deadline must be earlier than the event end date!"
+      );
+      return;
+    }
 
-    // Check each sub-event
+
     for (const [index, detail] of details.entries()) {
       if (!detail.name.trim() || !detail.about.trim()) {
         toast.error(`Sub Event ${index + 1} is missing required fields!`);
