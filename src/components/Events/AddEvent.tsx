@@ -2,7 +2,8 @@ import React, { useState } from "react";
 // import { CreateEvent } from "@/api/eventsApi";
 import { MdDelete } from "react-icons/md";
 import toast from "react-hot-toast";
-import { CreateEvent } from "@/api/eventsApi";
+import { CreateEvent } from "@/api/event";
+import axios from "axios";
 type EventType = "ONLINE" | "OFFLINE";
 
 interface VenueType {
@@ -295,12 +296,12 @@ const AddEvent: React.FC = () => {
       return;
     }
 
-    if (new Date(deadline) >= new Date(toDate)) {
-      toast.error(
-        "Registration deadline must be earlier than the event end date!"
-      );
-      return;
-    }
+    // if (new Date(deadline) >= new Date(toDate)) {
+    //   toast.error(
+    //     "Registration deadline must be earlier than the event end date!"
+    //   );
+    //   return;
+    // }
 
     // Check each sub-event
     for (const [index, detail] of details.entries()) {
@@ -374,6 +375,7 @@ const AddEvent: React.FC = () => {
     // Show loader toast
     const toastId = toast.loading("Submitting form...");
 
+    console.log("till here");
     try {
       const response = await CreateEvent(formDataToSend);
 
