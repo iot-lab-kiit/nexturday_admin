@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-// import { CreateEvent } from "@/api/eventsApi";
 import { MdDelete } from "react-icons/md";
 import toast from "react-hot-toast";
 import { CreateEvent } from "@/api/event";
-import axios from "axios";
 type EventType = "ONLINE" | "OFFLINE";
 
 interface VenueType {
