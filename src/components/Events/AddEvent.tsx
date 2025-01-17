@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-type EventType = "online" | "offline";
+import { MdDelete } from "react-icons/md";
+import toast from "react-hot-toast";
+import { CreateEvent } from "@/api/event";
+type EventType = "ONLINE" | "OFFLINE";
 
 interface VenueType {
   name: string;
@@ -24,46 +25,79 @@ interface FormDataType {
   eventType: EventType;
   fromDate: string;
   toDate: string;
-  venueName: string;
-  mapUrl?: string; // Optional
-  website?: string; // Optional
+  website?: string;
   emails: string[];
   contactNumbers: string[];
-  registrationUrl: string;
+  registrationUrl?: string;
   isPaidEvent: boolean;
-  price?: number; // Optional
-  participantCount?: number; // Optional
+  price?: number;
+  deadline: string;
   selectedFile: File | null;
-  optionalImageFile: File | null;
-  details: DetailType[]; // Added
+  details: DetailType[];
 }
+
+interface ConfirmationModalProps {
+  isOpen: boolean; // Determines if the modal is visible
+  onClose: () => void; // Function to close the modal
+  onConfirm: () => void; // Function to confirm the action
+  message: string; // Message to display in the modal
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  message,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white w-96 rounded-lg shadow-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-800">Are you sure?</h2>
+        <p className="text-sm text-gray-600 mt-2">{message}</p>
+        <div className="mt-4 flex justify-end gap-4">
+          <button
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none"
+            onClick={onConfirm}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AddEvent: React.FC = () => {
   const [formData, setFormData] = useState<FormDataType>({
     eventName: "",
     about: "",
     guidelines: [""],
-    eventType: "online",
+    eventType: "ONLINE",
     fromDate: "",
     toDate: "",
-    venueName: "",
-    mapUrl: "",
     website: "",
     emails: [""],
     contactNumbers: [""],
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
-    participantCount: 0,
+    deadline: "",
     selectedFile: null,
-    optionalImageFile: null,
     details: [
       {
         name: "",
         about: "",
         from: "",
         to: "",
-        type: "online",
+        type: "ONLINE",
         venue: {
           name: "",
           mapUrl: "",
@@ -71,6 +105,9 @@ const AddEvent: React.FC = () => {
       },
     ],
   });
+
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -99,28 +136,18 @@ const AddEvent: React.FC = () => {
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof Pick<FormDataType, "selectedFile" | "optionalImageFile">
+    key: string
   ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        [key]: file,
-      }));
-    }
+    const file = e.target.files?.[0] || null;
+
+    // Reset the input value to allow re-selecting the same file
+    e.target.value = "";
+
+    setFormData((prev) => ({
+      ...prev,
+      [key]: file,
+    }));
   };
-
-  // const handleOptionalFileChange = (
-  //   event: React.ChangeEvent<HTMLInputElement>
-  // ) => {
-  //   const file = event.target.files?.[0];
-  //   if (!file) return;
-
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     optionalImageFile: file,
-  //   }));
-  // };
 
   const handleAddGuideline = () => {
     setFormData((prev) => ({
@@ -131,7 +158,7 @@ const AddEvent: React.FC = () => {
 
   const handleGuidelineChange = (index: number, value: string) => {
     const updatedGuidelines = [...formData.guidelines];
-    updatedGuidelines[index] = value;
+    updatedGuidelines[index] = value.trim(); // Remove leading/trailing spaces
     setFormData((prev) => ({
       ...prev,
       guidelines: updatedGuidelines,
@@ -142,7 +169,7 @@ const AddEvent: React.FC = () => {
     const updatedGuidelines = formData.guidelines.filter((_, i) => i !== index);
     setFormData((prev) => ({
       ...prev,
-      guidelines: updatedGuidelines,
+      guidelines: updatedGuidelines.filter((g) => g.trim() !== ""), // Remove empty strings
     }));
   };
 
@@ -155,7 +182,7 @@ const AddEvent: React.FC = () => {
 
   const handleContactNumberChange = (index: number, value: string) => {
     const updatedContacts = [...formData.contactNumbers];
-    updatedContacts[index] = value;
+    updatedContacts[index] = value.trim(); // Remove leading/trailing spaces
     setFormData((prev) => ({
       ...prev,
       contactNumbers: updatedContacts,
@@ -168,7 +195,7 @@ const AddEvent: React.FC = () => {
     );
     setFormData((prev) => ({
       ...prev,
-      contactNumbers: updatedContacts,
+      contactNumbers: updatedContacts.filter((c) => c.trim() !== ""), // Remove empty strings
     }));
   };
 
@@ -181,7 +208,7 @@ const AddEvent: React.FC = () => {
 
   const handleEmailChange = (index: number, value: string) => {
     const updatedEmails = [...formData.emails];
-    updatedEmails[index] = value;
+    updatedEmails[index] = value.trim(); // Remove leading/trailing spaces
     setFormData((prev) => ({
       ...prev,
       emails: updatedEmails,
@@ -192,18 +219,27 @@ const AddEvent: React.FC = () => {
     const updatedEmails = formData.emails.filter((_, i) => i !== index);
     setFormData((prev) => ({
       ...prev,
-      emails: updatedEmails,
+      emails: updatedEmails.filter((e) => e.trim() !== ""), // Remove empty strings
     }));
   };
 
-  const handleDetailFieldChange = (index, field, value, subField = null) => {
+  const handleDetailFieldChange = (
+    index: number,
+    field: keyof DetailType,
+    value: string | EventType,
+    subField?: keyof VenueType
+  ) => {
     setFormData((prevState) => {
       const updatedDetails = [...prevState.details];
-      if (subField) {
-        updatedDetails[index][field][subField] = value;
-      } else {
-        updatedDetails[index][field] = value;
+
+      if (field === "venue" && subField) {
+        updatedDetails[index].venue[subField] = value as string;
+      } else if (field === "type") {
+        updatedDetails[index].type = value as EventType;
+      } else if (field !== "venue") {
+        updatedDetails[index][field] = value as DetailType[typeof field];
       }
+
       return { ...prevState, details: updatedDetails };
     });
   };
@@ -218,7 +254,7 @@ const AddEvent: React.FC = () => {
           about: "",
           from: "",
           to: "",
-          type: "online",
+          type: "ONLINE",
           venue: {
             name: "",
             mapUrl: "",
@@ -228,46 +264,98 @@ const AddEvent: React.FC = () => {
     }));
   };
 
+  const removeSubEvent = (index: number) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      details: prevState.details.filter((_, i) => i !== index),
+    }));
+    setModalOpen(false);
+  };
+
+  const confirmDelete = (index: number) => {
+    setDeleteIndex(index);
+    setModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { isPaidEvent, website, price, eventName, about, registrationUrl } =
-      formData;
-
     console.log("formData", formData);
+    const {
+      eventName,
+      about,
+      guidelines,
+      eventType,
+      fromDate,
+      toDate,
+      emails,
+      contactNumbers,
+      isPaidEvent,
+      price,
+      deadline,
+      details,
+      website,
+      registrationUrl,
+    } = formData;
 
-    // Validation checks
-    if (!eventName.trim()) {
-      toast.error("Event name is required!");
+    if (
+      !eventName.trim() ||
+      !about.trim() ||
+      !eventType.trim() ||
+      !fromDate.trim() ||
+      !toDate.trim() ||
+      !deadline.trim() ||
+      guidelines.some((g) => !g.trim()) ||
+      emails.some((email) => !email.trim()) ||
+      contactNumbers.some((number) => !number.trim()) ||
+      !formData.selectedFile
+    ) {
+      toast.error("Please fill in all required fields!");
       return;
     }
 
-    if (!about.trim()) {
-      toast.error("Event description is required!");
+    // Convert dates to ISO format
+    const fromISO = new Date(formData.fromDate).toISOString();
+    const toISO = new Date(formData.toDate).toISOString();
+
+    if (fromISO > toISO) {
+      toast.error("Event start date cannot be later than the end date!");
       return;
     }
 
-    if (!registrationUrl.trim()) {
-      toast.error("Registration URL is required!");
+    if (new Date(deadline).toISOString() >= toISO) {
+      toast.error(
+        "Registration deadline must be earlier than the event end date!"
+      );
       return;
     }
 
-    if (formData.details.length === 0) {
-      toast.error("At least one sub-event is required!");
-      return;
-    }
-
-    for (const [index, detail] of formData.details.entries()) {
-      if (!detail.name.trim()) {
-        toast.error(`Sub Event ${index + 1} must have a name!`);
+    for (const [index, detail] of details.entries()) {
+      if (!detail.name.trim() || !detail.about.trim()) {
+        toast.error(`Sub Event ${index + 1} is missing required fields!`);
         return;
       }
-      if (!detail.about.trim()) {
-        toast.error(`Sub Event ${index + 1} must have a description!`);
-        return;
-      }
-      if (!detail.from || !detail.to) {
+
+      if (!detail.from.trim() || !detail.to.trim()) {
         toast.error(`Sub Event ${index + 1} must have valid dates!`);
+        return;
+      }
+      const subEventFromDate = new Date(detail.from).toISOString();
+      const subEventToDate = new Date(detail.to).toISOString();
+
+      if (subEventFromDate > subEventToDate) {
+        toast.error(
+          `Sub Event ${index + 1} start date cannot be later than its end date!`
+        );
+        return;
+      }
+
+      if (subEventFromDate < fromISO || subEventToDate > toISO) {
+        toast.error(
+          `Sub Event ${
+            index + 1
+          }'s dates must be within the range of the main event dates!`
+        );
         return;
       }
     }
@@ -279,58 +367,70 @@ const AddEvent: React.FC = () => {
         );
         return;
       }
-      if (!website.trim()) {
+
+      if (!website || !website.trim()) {
         toast.error("Website URL is required for paid events!");
         return;
       }
-    }
 
-    // Convert dates to ISO format
-    const fromISO = new Date(formData.fromDate).toISOString();
-    const toISO = new Date(formData.toDate).toISOString();
+      if (!registrationUrl || !registrationUrl.trim()) {
+        // Check for `undefined` or empty value
+        toast.error("Registration URL is required for paid events!");
+        return;
+      }
+    }
 
     // Create FormData
     const formDataToSend = new FormData();
     formDataToSend.append("name", eventName);
     formDataToSend.append("about", about);
     formDataToSend.append("websiteUrl", website || "");
-    formDataToSend.append("registrationUrl", registrationUrl);
-    formDataToSend.append("price", isPaidEvent ? price.toString() : "0");
+    formDataToSend.append("registrationUrl", registrationUrl || "");
+
+    formDataToSend.append("price", isPaidEvent ? String(price) : "0");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
-
-    formData.emails.forEach((email) => formDataToSend.append("emails", email));
-    formData.guidelines.forEach((g) => formDataToSend.append("guidlines", g));
-    formData.contactNumbers.forEach((n) =>
-      formDataToSend.append("phoneNumbers", n)
+    formDataToSend.append(
+      "deadline",
+      new Date(formData.deadline).toISOString()
     );
 
-    formDataToSend.append("details", JSON.stringify(formData.details));
+    const validEmails = formData.emails.filter((email) => email.trim());
+    const validGuidelines = formData.guidelines.filter((g) => g.trim());
+    const validContactNumbers = formData.contactNumbers.filter((n) => n.trim());
 
-    if (formData.selectedFile) {
-      formDataToSend.append("images", formData.selectedFile);
-    }
+    validEmails.forEach((email, index) => {
+      formDataToSend.append(`emails[${index}]`, email);
+    });
+    validGuidelines.forEach((g, index) =>
+      formDataToSend.append(`guidlines[${index}]`, g)
+    );
+    validContactNumbers.forEach((n, index) =>
+      formDataToSend.append(`phoneNumbers[${index}]`, n)
+    );
+
+    const formattedDetails = formData.details.map((detail) => ({
+      ...detail,
+      from: new Date(detail.from).toISOString(),
+      to: new Date(detail.to).toISOString(),
+    }));
+
+    // Append formatted details to FormData
+    formDataToSend.append("details", JSON.stringify(formattedDetails));
+    formDataToSend.append("images", formData.selectedFile);
 
     // Show loader toast
     const toastId = toast.loading("Submitting form...");
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/api/events`,
-        formDataToSend,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
-          },
-        }
-      );
 
-      toast.dismiss(toastId); // Dismiss the loader
-      toast.success("Form submitted successfully!");
+      const response = await CreateEvent(formDataToSend);
 
-      console.log("Response:", response.data);
+      toast.dismiss(toastId);
+      toast.success("Event Added successfully!");
+
+      console.log("Response:", response);
     } catch (error) {
       toast.dismiss(toastId);
       toast.error("Error submitting form. Please try again.");
@@ -376,9 +476,24 @@ const AddEvent: React.FC = () => {
                 Upload Image
               </button>
               {formData.selectedFile && (
-                <span className="text-gray-600 text-sm">
-                  {formData.selectedFile.name}
-                </span>
+                <>
+                  <span className="text-gray-600 text-sm">
+                    {formData.selectedFile.name}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        selectedFile: null,
+                      }))
+                    }
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <MdDelete size={20} />
+                  </button>
+                </>
               )}
             </div>
             <input
@@ -529,7 +644,7 @@ const AddEvent: React.FC = () => {
               className="text-gray-700 text-sm font-bold"
               htmlFor="registrationUrl"
             >
-              Registration URL <span className="text-red-500 ml-1">*</span>
+              Registration URL
             </label>
             <input
               type="url"
@@ -551,7 +666,7 @@ const AddEvent: React.FC = () => {
                 From <span className="text-red-500 ml-1">*</span>
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 id="fromDate"
                 value={formData.fromDate}
                 onChange={handleInputChange}
@@ -566,7 +681,7 @@ const AddEvent: React.FC = () => {
                 To <span className="text-red-500 ml-1">*</span>
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 id="toDate"
                 value={formData.toDate}
                 onChange={handleInputChange}
@@ -616,14 +731,15 @@ const AddEvent: React.FC = () => {
                 className="text-gray-700 text-sm font-bold"
                 htmlFor="participantCount"
               >
-                Participant Count <span className="text-red-500 ml-1">*</span>
+                Registration Deadline{" "}
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <input
-                type="number"
-                id="participantCount"
-                value={formData.participantCount}
+                type="datetime-local"
+                id="deadline"
+                value={formData.deadline}
                 onChange={handleInputChange}
-                placeholder="Enter expected participant count"
+                placeholder="Enter  Registration Deadline  "
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
               />
             </div>
@@ -649,12 +765,23 @@ const AddEvent: React.FC = () => {
 
           {/* Details Section */}
           {formData.details.map((detail, index) => (
-            <div key={index} className="flex flex-col gap-4">
-              <h4 className="text-gray-700 text-sm font-bold">
+            <div key={index} className="flex flex-col gap-4 relative">
+              {formData.details.length > 1 && index !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => confirmDelete(index)}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-700 focus:outline-none"
+                >
+                  <MdDelete size={24} />
+                </button>
+              )}
+              <h4 className="text-gray-700 text-lg font-bold">
                 Details (Sub Event {index + 1})
               </h4>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">Name</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  Name <span className="text-red-500 ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder={`Enter name for Sub Event ${index + 1}`}
@@ -666,7 +793,9 @@ const AddEvent: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">About</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  About <span className="text-red-500 ml-1">*</span>
+                </label>
                 <textarea
                   placeholder={`Enter description for Sub Event ${index + 1}`}
                   value={detail.about}
@@ -677,7 +806,9 @@ const AddEvent: React.FC = () => {
                 ></textarea>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">From</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  From <span className="text-red-500 ml-1">*</span>
+                </label>
                 <input
                   type="datetime-local"
                   value={detail.from}
@@ -688,7 +819,9 @@ const AddEvent: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">To</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  To <span className="text-red-500 ml-1">*</span>
+                </label>
                 <input
                   type="datetime-local"
                   value={detail.to}
@@ -699,7 +832,9 @@ const AddEvent: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">Type</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  Type <span className="text-red-500 ml-1">*</span>
+                </label>
                 <select
                   value={detail.type}
                   onChange={(e) =>
@@ -780,6 +915,18 @@ const AddEvent: React.FC = () => {
           >
             Add More Sub-Events
           </button>
+
+          {/* Confirmation Modal */}
+          <ConfirmationModal
+            isOpen={isModalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={() => {
+              if (deleteIndex !== null) {
+                removeSubEvent(deleteIndex); // Only proceed if deleteIndex is valid
+              }
+            }}
+            message="This action cannot be undone. Do you want to proceed?"
+          />
 
           {/* Submit Button */}
           <button

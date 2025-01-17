@@ -52,3 +52,19 @@ export const deleteEvent = async (eventId: string) => {
     throw error;
   }
 };
+
+export const CreateEvent = async (formData: FormData) => {
+  try {
+    const response = await api.post(`/api/events/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    throw error;
+  }
+};

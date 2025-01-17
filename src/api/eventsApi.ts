@@ -66,4 +66,5 @@ export const deleteEvent = async (eventId: string) => {
     console.error("Error deleting event:", error);
     throw error;
   }
-}; 
+};
+
