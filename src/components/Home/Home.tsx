@@ -106,7 +106,7 @@ function Home() {
           </div>
         ) : (
           <div
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/")}
             className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
           >
             <RiShutDownLine />

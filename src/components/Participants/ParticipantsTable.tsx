@@ -102,7 +102,22 @@ const ParticipantsTable = () => {
   }
 
   if (!participants || participants.data.length === 0) {
-    return <div className="text-center py-10">No participants found</div>;
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Participants Found</h3>
+          <p className="text-gray-600 mb-4">
+            It seems there are no participants registered for this event yet.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
