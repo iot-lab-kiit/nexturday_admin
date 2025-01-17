@@ -136,15 +136,17 @@ const AddEvent: React.FC = () => {
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof Pick<FormDataType, "selectedFile">
+    key: string
   ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        [key]: file,
-      }));
-    }
+    const file = e.target.files?.[0] || null;
+
+    // Reset the input value to allow re-selecting the same file
+    e.target.value = "";
+
+    setFormData((prev) => ({
+      ...prev,
+      [key]: file,
+    }));
   };
 
   const handleAddGuideline = () => {
@@ -156,7 +158,7 @@ const AddEvent: React.FC = () => {
 
   const handleGuidelineChange = (index: number, value: string) => {
     const updatedGuidelines = [...formData.guidelines];
-    updatedGuidelines[index] = value;
+    updatedGuidelines[index] = value.trim(); // Remove leading/trailing spaces
     setFormData((prev) => ({
       ...prev,
       guidelines: updatedGuidelines,
@@ -167,7 +169,7 @@ const AddEvent: React.FC = () => {
     const updatedGuidelines = formData.guidelines.filter((_, i) => i !== index);
     setFormData((prev) => ({
       ...prev,
-      guidelines: updatedGuidelines,
+      guidelines: updatedGuidelines.filter((g) => g.trim() !== ""), // Remove empty strings
     }));
   };
 
@@ -180,7 +182,7 @@ const AddEvent: React.FC = () => {
 
   const handleContactNumberChange = (index: number, value: string) => {
     const updatedContacts = [...formData.contactNumbers];
-    updatedContacts[index] = value;
+    updatedContacts[index] = value.trim(); // Remove leading/trailing spaces
     setFormData((prev) => ({
       ...prev,
       contactNumbers: updatedContacts,
@@ -193,7 +195,7 @@ const AddEvent: React.FC = () => {
     );
     setFormData((prev) => ({
       ...prev,
-      contactNumbers: updatedContacts,
+      contactNumbers: updatedContacts.filter((c) => c.trim() !== ""), // Remove empty strings
     }));
   };
 
@@ -206,7 +208,7 @@ const AddEvent: React.FC = () => {
 
   const handleEmailChange = (index: number, value: string) => {
     const updatedEmails = [...formData.emails];
-    updatedEmails[index] = value;
+    updatedEmails[index] = value.trim(); // Remove leading/trailing spaces
     setFormData((prev) => ({
       ...prev,
       emails: updatedEmails,
@@ -217,7 +219,7 @@ const AddEvent: React.FC = () => {
     const updatedEmails = formData.emails.filter((_, i) => i !== index);
     setFormData((prev) => ({
       ...prev,
-      emails: updatedEmails,
+      emails: updatedEmails.filter((e) => e.trim() !== ""), // Remove empty strings
     }));
   };
 
@@ -240,143 +242,6 @@ const AddEvent: React.FC = () => {
 
       return { ...prevState, details: updatedDetails };
     });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    console.log("formData", formData);
-    const {
-      eventName,
-      about,
-      guidelines,
-      eventType,
-      fromDate,
-      toDate,
-      emails,
-      contactNumbers,
-      isPaidEvent,
-      price,
-      deadline,
-      details,
-      website,
-      registrationUrl,
-    } = formData;
-
-    // General check for empty fields
-    if (
-      !eventName.trim() ||
-      !about.trim() ||
-      !eventType.trim() ||
-      !fromDate.trim() ||
-      !toDate.trim() ||
-      !deadline.trim() ||
-      guidelines.some((g) => !g.trim()) ||
-      emails.some((email) => !email.trim()) ||
-      contactNumbers.some((number) => !number.trim())
-    ) {
-      toast.error("Please fill in all required fields!");
-      return;
-    }
-
-    if (new Date(fromDate) > new Date(toDate)) {
-      toast.error("Event start date cannot be later than the end date!");
-      return;
-    }
-
-    if (new Date(deadline) >= new Date(toDate)) {
-      toast.error(
-        "Registration deadline must be earlier than the event end date!"
-      );
-      return;
-    }
-
-
-    for (const [index, detail] of details.entries()) {
-      if (!detail.name.trim() || !detail.about.trim()) {
-        toast.error(`Sub Event ${index + 1} is missing required fields!`);
-        return;
-      }
-
-      if (!detail.from.trim() || !detail.to.trim()) {
-        toast.error(`Sub Event ${index + 1} must have valid dates!`);
-        return;
-      }
-
-      if (new Date(detail.from) > new Date(detail.to)) {
-        toast.error(
-          `Sub Event ${index + 1} start date cannot be later than its end date!`
-        );
-        return;
-      }
-    }
-
-    if (isPaidEvent) {
-      if (!price || isNaN(price) || price <= 0) {
-        toast.error(
-          "Price is required and must be a valid positive number for paid events!"
-        );
-        return;
-      }
-
-      if (!website || !website.trim()) {
-        toast.error("Website URL is required for paid events!");
-        return;
-      }
-
-      if (!registrationUrl || !registrationUrl.trim()) {
-        // Check for `undefined` or empty value
-        toast.error("Registration URL is required for paid events!");
-        return;
-      }
-    }
-
-    // Convert dates to ISO format
-    const fromISO = new Date(formData.fromDate).toISOString();
-    const toISO = new Date(formData.toDate).toISOString();
-
-    // Create FormData
-    const formDataToSend = new FormData();
-    formDataToSend.append("name", eventName);
-    formDataToSend.append("about", about);
-    formDataToSend.append("websiteUrl", website || "");
-    formDataToSend.append("registrationUrl", registrationUrl || "");
-
-    formDataToSend.append("price", isPaidEvent ? String(price) : "0");
-    formDataToSend.append("from", fromISO);
-    formDataToSend.append("to", toISO);
-    formDataToSend.append("paid", isPaidEvent.toString());
-    formDataToSend.append("deadline", formData.deadline);
-
-    formData.emails.forEach((email) => formDataToSend.append("emails", email));
-    formData.guidelines.forEach((g) => formDataToSend.append("guidlines", g));
-    formData.contactNumbers.forEach((n) =>
-      formDataToSend.append("phoneNumbers", n)
-    );
-
-    formDataToSend.append("details", JSON.stringify(formData.details));
-
-    if (formData.selectedFile) {
-      formDataToSend.append("images", formData.selectedFile);
-    }
-
-    // Show loader toast
-    const toastId = toast.loading("Submitting form...");
-
-    console.log("till here");
-    try {
-      const response = await CreateEvent(formDataToSend);
-
-      toast.dismiss(toastId); // Dismiss the loader
-      toast.success("Form submitted successfully!");
-
-      console.log("Response:", response.data);
-    } catch (error) {
-      toast.dismiss(toastId);
-      toast.error("Error submitting form. Please try again.");
-      console.error("Error:", error);
-      throw error;
-    }
   };
 
   const addSubEvent = () => {
@@ -410,6 +275,176 @@ const AddEvent: React.FC = () => {
   const confirmDelete = (index: number) => {
     setDeleteIndex(index);
     setModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log("formData", formData);
+    const {
+      eventName,
+      about,
+      guidelines,
+      eventType,
+      fromDate,
+      toDate,
+      emails,
+      contactNumbers,
+      isPaidEvent,
+      price,
+      deadline,
+      details,
+      website,
+      registrationUrl,
+    } = formData;
+
+    if (
+      !eventName.trim() ||
+      !about.trim() ||
+      !eventType.trim() ||
+      !fromDate.trim() ||
+      !toDate.trim() ||
+      !deadline.trim() ||
+      guidelines.some((g) => !g.trim()) ||
+      emails.some((email) => !email.trim()) ||
+      contactNumbers.some((number) => !number.trim()) ||
+      !formData.selectedFile
+    ) {
+      toast.error("Please fill in all required fields!");
+      return;
+    }
+
+    // Convert dates to ISO format
+    const fromISO = new Date(formData.fromDate).toISOString();
+    const toISO = new Date(formData.toDate).toISOString();
+
+    if (fromISO > toISO) {
+      toast.error("Event start date cannot be later than the end date!");
+      return;
+    }
+
+    if (new Date(deadline).toISOString() >= toISO) {
+      toast.error(
+        "Registration deadline must be earlier than the event end date!"
+      );
+      return;
+    }
+
+    for (const [index, detail] of details.entries()) {
+      if (!detail.name.trim() || !detail.about.trim()) {
+        toast.error(`Sub Event ${index + 1} is missing required fields!`);
+        return;
+      }
+
+      if (!detail.from.trim() || !detail.to.trim()) {
+        toast.error(`Sub Event ${index + 1} must have valid dates!`);
+        return;
+      }
+      const subEventFromDate = new Date(detail.from).toISOString();
+      const subEventToDate = new Date(detail.to).toISOString();
+
+      if (subEventFromDate > subEventToDate) {
+        toast.error(
+          `Sub Event ${index + 1} start date cannot be later than its end date!`
+        );
+        return;
+      }
+
+      if (subEventFromDate < fromISO || subEventToDate > toISO) {
+        toast.error(
+          `Sub Event ${
+            index + 1
+          }'s dates must be within the range of the main event dates!`
+        );
+        return;
+      }
+    }
+
+    if (isPaidEvent) {
+      if (!price || isNaN(price) || price <= 0) {
+        toast.error(
+          "Price is required and must be a valid positive number for paid events!"
+        );
+        return;
+      }
+
+      if (!website || !website.trim()) {
+        toast.error("Website URL is required for paid events!");
+        return;
+      }
+
+      if (!registrationUrl || !registrationUrl.trim()) {
+        // Check for `undefined` or empty value
+        toast.error("Registration URL is required for paid events!");
+        return;
+      }
+    }
+
+    // Create FormData
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", eventName);
+    formDataToSend.append("about", about);
+    formDataToSend.append("websiteUrl", website || "");
+    formDataToSend.append("registrationUrl", registrationUrl || "");
+
+    formDataToSend.append("price", isPaidEvent ? String(price) : "0");
+    formDataToSend.append("from", fromISO);
+    formDataToSend.append("to", toISO);
+    formDataToSend.append("paid", isPaidEvent.toString());
+    formDataToSend.append(
+      "deadline",
+      new Date(formData.deadline).toISOString()
+    );
+
+    const validEmails = formData.emails.filter((email) => email.trim());
+    const validGuidelines = formData.guidelines.filter((g) => g.trim());
+    const validContactNumbers = formData.contactNumbers.filter((n) => n.trim());
+
+    validEmails.forEach((email, index) => {
+      formDataToSend.append(`emails[${index}]`, email);
+    });
+    validGuidelines.forEach((g, index) =>
+      formDataToSend.append(`guidlines[${index}]`, g)
+    );
+    validContactNumbers.forEach((n, index) =>
+      formDataToSend.append(`phoneNumbers[${index}]`, n)
+    );
+
+    const formattedDetails = formData.details.map((detail) => ({
+      ...detail,
+      from: new Date(detail.from).toISOString(),
+      to: new Date(detail.to).toISOString(),
+    }));
+
+    // Append formatted details to FormData
+    formDataToSend.append("details", JSON.stringify(formattedDetails));
+    formDataToSend.append("images", formData.selectedFile);
+
+    // Show loader toast
+    const toastId = toast.loading("Submitting form...");
+
+    console.log("Emails (getAll):", formDataToSend.getAll("emails"));
+    console.log("Emails type:", typeof formDataToSend.getAll("emails"));
+    console.log("Guidelines (getAll):", formDataToSend.getAll("guidlines"));
+    console.log(
+      "Phone Numbers (getAll):",
+      formDataToSend.getAll("phoneNumbers")
+    );
+    console.log("till here");
+    try {
+
+      const response = await CreateEvent(formDataToSend);
+
+      toast.dismiss(toastId);
+      toast.success("Event Added successfully!");
+
+      console.log("Response:", response);
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error("Error submitting form. Please try again.");
+      console.error("Error:", error);
+      throw error;
+    }
   };
 
   return (
@@ -449,9 +484,24 @@ const AddEvent: React.FC = () => {
                 Upload Image
               </button>
               {formData.selectedFile && (
-                <span className="text-gray-600 text-sm">
-                  {formData.selectedFile.name}
-                </span>
+                <>
+                  <span className="text-gray-600 text-sm">
+                    {formData.selectedFile.name}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        selectedFile: null,
+                      }))
+                    }
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <MdDelete size={20} />
+                  </button>
+                </>
               )}
             </div>
             <input
@@ -602,7 +652,7 @@ const AddEvent: React.FC = () => {
               className="text-gray-700 text-sm font-bold"
               htmlFor="registrationUrl"
             >
-              Registration URL <span className="text-red-500 ml-1">*</span>
+              Registration URL
             </label>
             <input
               type="url"
@@ -733,11 +783,13 @@ const AddEvent: React.FC = () => {
                   <MdDelete size={24} />
                 </button>
               )}
-              <h4 className="text-gray-700 text-sm font-bold">
+              <h4 className="text-gray-700 text-lg font-bold">
                 Details (Sub Event {index + 1})
               </h4>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">Name</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  Name <span className="text-red-500 ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder={`Enter name for Sub Event ${index + 1}`}
@@ -749,7 +801,9 @@ const AddEvent: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">About</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  About <span className="text-red-500 ml-1">*</span>
+                </label>
                 <textarea
                   placeholder={`Enter description for Sub Event ${index + 1}`}
                   value={detail.about}
@@ -760,7 +814,9 @@ const AddEvent: React.FC = () => {
                 ></textarea>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">From</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  From <span className="text-red-500 ml-1">*</span>
+                </label>
                 <input
                   type="datetime-local"
                   value={detail.from}
@@ -771,7 +827,9 @@ const AddEvent: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">To</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  To <span className="text-red-500 ml-1">*</span>
+                </label>
                 <input
                   type="datetime-local"
                   value={detail.to}
@@ -782,7 +840,9 @@ const AddEvent: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">Type</label>
+                <label className="text-gray-700 text-sm font-bold">
+                  Type <span className="text-red-500 ml-1">*</span>
+                </label>
                 <select
                   value={detail.type}
                   onChange={(e) =>
