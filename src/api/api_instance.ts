@@ -10,6 +10,20 @@ const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     const token = sessionStorage.getItem("societyToken");
+    console.log(token)
+    //check whether token is 1 week expired or not
+    let payload;
+    if (token) {
+      payload = JSON.parse(atob(token.split(".")[1])); // decode the payload
+    } else {
+      throw new Error("Token is null");
+    }
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    if (currentTime > payload.exp) {
+      sessionStorage.removeItem("societyToken");
+      console.log("Token expired");
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

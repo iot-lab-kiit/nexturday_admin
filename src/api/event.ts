@@ -1,19 +1,19 @@
 import api from "@/api/api_instance";
 
-export const getEvents = async () => {
+export const getEvents = async (page:number) => {
   try {
-    const response = await api.get("/api/events", {
+    const response = await api.get("/api/events/society", {
       params: {
-        page: 1,
+        page: page,
         field: "createdAt",
         direction: "desc",
       },
     });
-    console.log(response.data.data.data);
-    return response.data.data.data;
+    console.log(response.data);
+    return response.data;
   } catch (error) {
     console.error("Error fetching events:", error);
-    throw error; // Rethrow the error if needed
+    throw error;
   }
 };
 
@@ -25,9 +25,9 @@ export const getEventDetails = async (eventId: string) => {
     console.error("Error fetching event details:", error);
     throw error;
   }
-}
+};
 
-export const getParticipants= async (id: string, currentPage:number) => {
+export const getParticipants = async (id: string, currentPage: number) => {
   try {
     const response = await api.get(`/api/events/society/${id}/participants`, {
       params: {
@@ -41,11 +41,27 @@ export const getParticipants= async (id: string, currentPage:number) => {
     console.error("Error fetching participants:", error);
     throw error;
   }
-}
+};
 
 export const deleteEvent = async (eventId: string) => {
   try {
     const response = await api.delete(`/api/events/${eventId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    throw error;
+  }
+};
+
+export const CreateEvent = async (formData: FormData) => {
+  try {
+    const response = await api.post(`/api/events/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+      },
+    });
+
     return response.data;
   } catch (error) {
     console.error("Error deleting event:", error);

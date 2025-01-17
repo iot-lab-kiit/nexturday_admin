@@ -2,9 +2,7 @@ import axios from "axios";
 
 export const updateSocietyProfile = async (data: {
   name: string;
-  description: string;
   websiteUrl: string;
-  email: string;
   password: string;
   phoneNumber: string;
 }) => {
@@ -13,9 +11,7 @@ export const updateSocietyProfile = async (data: {
       `${import.meta.env.VITE_BASE_URL}/api/society`,
       {
         name: data.name,
-        desc: data.description,
         websiteUrl: data.websiteUrl,
-        email: data.email,
         password: data.password,
         phoneNumber: data.phoneNumber,
       },
@@ -31,4 +27,22 @@ export const updateSocietyProfile = async (data: {
     console.error("Error updating society profile:", error);
     throw error;
   }
-}; 
+};
+
+export const getSocietyProfile = async () => {
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_BASE_URL}/api/society`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching society profile:", error);
+    throw error;
+  }
+};

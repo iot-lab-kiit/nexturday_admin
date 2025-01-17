@@ -37,6 +37,46 @@ const ParticipantsTable = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Custom function to convert data to CSV
+  const convertToCSV = (data: Participant[]) => {
+    const headers = [
+      "Name",
+      "Roll No",
+      "Branch",
+      "Year",
+      "Contact",
+      "Registration Date",
+      "Registration Time",
+    ];
+    const rows = data.map((participant) => [
+      participant.participant.detail.name,
+      participant.participant.rollNo,
+      participant.participant.detail.branch,
+      participant.participant.detail.studyYear,
+      participant.participant.detail.phoneNumber,
+      new Date(participant.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    ]);
+    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+    return csvContent;
+  };
+  const downloadCSV = () => {
+    if (!participants) return;
+    const csvContent = convertToCSV(participants.data);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `participants_page_${currentPage}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     const fetchParticipants = async () => {
       setLoading(true);
@@ -62,7 +102,22 @@ const ParticipantsTable = () => {
   }
 
   if (!participants || participants.data.length === 0) {
-    return <div className="text-center py-10">No participants found</div>;
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Participants Found</h3>
+          <p className="text-gray-600 mb-4">
+            It seems there are no participants registered for this event yet.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -160,6 +215,14 @@ const ParticipantsTable = () => {
               } border`}
             >
               Next
+            </button>
+          </div>
+          <div className="mt-4 text-right">
+            <button
+              onClick={downloadCSV}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Download CSV
             </button>
           </div>
         </div>
