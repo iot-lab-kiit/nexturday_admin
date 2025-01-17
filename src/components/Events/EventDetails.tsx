@@ -21,6 +21,17 @@ interface Event {
   society: {
     name: string;
   };
+  details: {
+    name: string;
+    about: string;
+    from: string;
+    to: string;
+    type: string;
+    venue: {
+      mapUrl: string;
+      name: string;
+    };
+  }[];
 }
 
 const EventDetails = () => {
@@ -158,6 +169,31 @@ const EventDetails = () => {
               </p>
             </div>
           </div>
+
+          {/* Sub Event Details Section */}
+          {event.details && event.details.length > 0 && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h2 className="text-xl font-semibold mb-3">Sub Event Details</h2>
+              {event.details.map((subEvent, index) => (
+                <div key={index} className="space-y-2">
+                  <h3 className="text-lg font-bold">{subEvent.name}</h3>
+                  <p>{subEvent.about}</p>
+                  <p>
+                    <strong>Start:</strong> {new Date(subEvent.from).toLocaleString()}
+                  </p>
+                  <p>
+                    <strong>End:</strong> {new Date(subEvent.to).toLocaleString()}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> {subEvent.type}
+                  </p>
+                  <p>
+                    <strong>Venue:</strong> {subEvent.venue.name} - <a href={subEvent.venue.mapUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Map</a>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex justify-center pt-4 pb-8">
             <button

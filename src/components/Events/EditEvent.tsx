@@ -24,10 +24,10 @@ const eventSchema = z.object({
     name: z.string().min(1, "Venue name is required"),
   }),
   type: z.enum(["OFFLINE", "ONLINE"]),
-  sessionName: z.string().min(1, "Session name is required"),
-  sessionAbout: z.string().min(1, "Session description is required"),
-  sessionFrom: z.string().min(1, "Session start time is required"),
-  sessionTo: z.string().min(1, "Session end time is required"),
+  subEventName: z.string().min(1, "Sub event name is required"),
+  subEventAbout: z.string().min(1, "Sub event description is required"),
+  subEventFrom: z.string().min(1, "Sub event start time is required"),
+  subEventTo: z.string().min(1, "Sub event end time is required"),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
@@ -84,16 +84,16 @@ const EditEvent = () => {
         setValue("guidlines", eventData.guidlines.join("\n"));
 
         if (eventData.details && eventData.details[0]) {
-          const session = eventData.details[0];
-          setValue("sessionName", session.name);
-          setValue("sessionAbout", session.about);
-          setValue("sessionFrom", formatDateForInput(session.from));
-          setValue("sessionTo", formatDateForInput(session.to));
-          setValue("type", session.type);
+          const subEvent = eventData.details[0];
+          setValue("subEventName", subEvent.name);
+          setValue("subEventAbout", subEvent.about);
+          setValue("subEventFrom", formatDateForInput(subEvent.from));
+          setValue("subEventTo", formatDateForInput(subEvent.to));
+          setValue("type", subEvent.type);
           
-          if (session.venue) {
-            setValue("venue.mapUrl", session.venue.mapUrl);
-            setValue("venue.name", session.venue.name);
+          if (subEvent.venue) {
+            setValue("venue.mapUrl", subEvent.venue.mapUrl);
+            setValue("venue.name", subEvent.venue.name);
           }
         }
       } catch (error) {
@@ -129,10 +129,10 @@ const EditEvent = () => {
         paid: data.paid,
         details: [
           {
-            name: data.sessionName,
-            about: data.sessionAbout,
-            from: formatDateForAPI(data.sessionFrom),
-            to: formatDateForAPI(data.sessionTo),
+            name: data.subEventName,
+            about: data.subEventAbout,
+            from: formatDateForAPI(data.subEventFrom),
+            to: formatDateForAPI(data.subEventTo),
             type: data.type,
             venue: {
               mapUrl: data.venue.mapUrl,
@@ -353,61 +353,49 @@ const EditEvent = () => {
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                Session Details
+                Sub Event Details
               </div>
               <div className="grid grid-cols-1 gap-6 bg-gray-50 p-4 rounded-lg">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Session Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sub Event Name</label>
                   <input
                     type="text"
-                    {...register("sessionName")}
+                    {...register("subEventName")}
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   />
-                  {errors.sessionName && <p className="mt-1 text-sm text-red-600">{errors.sessionName.message}</p>}
+                  {errors.subEventName && <p className="mt-1 text-sm text-red-600">{errors.subEventName.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Session Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sub Event Description</label>
                   <textarea
-                    {...register("sessionAbout")}
+                    {...register("subEventAbout")}
                     rows={3}
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   />
-                  {errors.sessionAbout && <p className="mt-1 text-sm text-red-600">{errors.sessionAbout.message}</p>}
+                  {errors.subEventAbout && <p className="mt-1 text-sm text-red-600">{errors.subEventAbout.message}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Session Start Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sub Event Start Time</label>
                     <input
                       type="datetime-local"
-                      {...register("sessionFrom")}
+                      {...register("subEventFrom")}
                       className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
-                    {errors.sessionFrom && <p className="mt-1 text-sm text-red-600">{errors.sessionFrom.message}</p>}
+                    {errors.subEventFrom && <p className="mt-1 text-sm text-red-600">{errors.subEventFrom.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Session End Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sub Event End Time</label>
                     <input
                       type="datetime-local"
-                      {...register("sessionTo")}
+                      {...register("subEventTo")}
                       className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
-                    {errors.sessionTo && <p className="mt-1 text-sm text-red-600">{errors.sessionTo.message}</p>}
+                    {errors.subEventTo && <p className="mt-1 text-sm text-red-600">{errors.subEventTo.message}</p>}
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
-                  <select
-                    {...register("type")}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  >
-                    <option value="OFFLINE">Offline</option>
-                    <option value="ONLINE">Online</option>
-                  </select>
-                  {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>}
                 </div>
               </div>
             </section>
