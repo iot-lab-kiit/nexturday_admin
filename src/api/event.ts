@@ -1,19 +1,19 @@
 import api from "@/api/api_instance";
 
-export const getEvents = async () => {
+export const getEvents = async (page:number) => {
   try {
-    const response = await api.get("/api/events", {
+    const response = await api.get("/api/events/society", {
       params: {
-        page: 1,
+        page: page,
         field: "createdAt",
         direction: "desc",
       },
     });
-    console.log(response.data.data.data);
-    return response.data.data.data;
+    console.log(response.data);
+    return response.data;
   } catch (error) {
     console.error("Error fetching events:", error);
-    throw error; // Rethrow the error if needed
+    throw error;
   }
 };
 

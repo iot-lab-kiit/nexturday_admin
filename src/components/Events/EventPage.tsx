@@ -5,14 +5,13 @@ import { deleteEvent, getEvents } from "@/api/event";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 
-
 interface Event {
   id: string;
   about: string;
   createdAt: string;
   emails: string[];
   guidlines: string[];
-  images: { url: string }[];
+  images: { key: string; url: string }[];
   name: string;
   paid: boolean;
   participationCount: number;
@@ -22,6 +21,22 @@ interface Event {
   society: {
     name: string;
   };
+  websiteUrl: string;
+  from: string;
+  to: string;
+  updatedAt: string;
+}
+
+interface Data {
+  data: Event[];
+}
+
+interface PaginatedEvents {
+  currentPage: number;
+  nextPage: number | null;
+  totalItems: number;
+  totalPages: number;
+  data: Data;
 }
 
 interface DeleteConfirmationProps {
@@ -31,7 +46,12 @@ interface DeleteConfirmationProps {
   onCancel: () => void;
 }
 
-const DeleteConfirmation = ({ isOpen, eventName, onConfirm, onCancel }: DeleteConfirmationProps) => {
+const DeleteConfirmation = ({
+  isOpen,
+  eventName,
+  onConfirm,
+  onCancel,
+}: DeleteConfirmationProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleConfirm = async () => {
@@ -45,9 +65,12 @@ const DeleteConfirmation = ({ isOpen, eventName, onConfirm, onCancel }: DeleteCo
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Event</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Delete Event
+        </h3>
         <p className="text-gray-600 mb-4">
-          Are you sure you want to delete "{eventName}"? This action cannot be undone.
+          Are you sure you want to delete "{eventName}"? This action cannot be
+          undone.
         </p>
         <div className="flex justify-end gap-3">
           <button
@@ -61,27 +84,31 @@ const DeleteConfirmation = ({ isOpen, eventName, onConfirm, onCancel }: DeleteCo
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
             disabled={isDeleting}
           >
-            {isDeleting ? <div>
-                    <svg
-                      className="animate-spin h-8 w-8 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                  </div> : "Delete"}
+            {isDeleting ? (
+              <div>
+                <svg
+                  className="animate-spin h-8 w-8 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+              </div>
+            ) : (
+              "Delete"
+            )}
           </button>
         </div>
       </div>
@@ -91,21 +118,25 @@ const DeleteConfirmation = ({ isOpen, eventName, onConfirm, onCancel }: DeleteCo
 
 const EventPage = () => {
   const navigate = useNavigate();
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<PaginatedEvents>({
+    currentPage: 1,
+    nextPage: null,
+    totalItems: 0,
+    totalPages: 0,
+    data: [],
+  });
   const [loading, setLoading] = useState(true);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
   const [deleteEventName, setDeleteEventName] = useState<string>("");
-
-
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const res = await getEvents();
-        console.log(res);
-        toast.success("Events fetched successfully");
+        const res = await getEvents(currentPage);
         setEvents(res);
+        toast.success("Events fetched successfully");
       } catch (error) {
         console.error("Error fetching events:", error);
         toast.error("Error fetching events");
@@ -114,12 +145,16 @@ const EventPage = () => {
       }
     };
     fetchEvents();
-  }, []);
+  }, [currentPage]);
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
       await deleteEvent(eventId);
-      setEvents(events.filter(event => event.id !== eventId));
+      setEvents((prev) => ({
+        ...prev,
+        data: prev.data.filter((event) => event.id !== eventId),
+        totalItems: prev.totalItems - 1,
+      }));
       toast.success("Event deleted successfully");
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -131,20 +166,20 @@ const EventPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold m-auto">EVENTS</h1>
+        <h1 className="text-2xl font-bold">EVENTS</h1>
       </div>
-  
+
       {loading ? (
         <div className="text-center text-lg font-medium my-5">
           <LoadingSpinner />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {events.map((event, index) => (
+          {events.data.data.map((event, index) => (
             <div
-              key={index}
+              key={event.id}
               className="relative h-[300px] sm:h-[350px] rounded-xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
               onClick={() => navigate(`/events/${event.id}`)}
             >
@@ -157,7 +192,7 @@ const EventPage = () => {
               <div className="absolute inset-0 p-6 flex flex-col justify-between">
                 <div className="flex justify-between items-start">
                   <span className="bg-blue-500/80 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
-                    {event.paid ? `₹${event.price}` : 'Free'}
+                    {event.paid ? `₹${event.price}` : "Free"}
                   </span>
                   <div className="flex gap-2">
                     <button
@@ -205,15 +240,17 @@ const EventPage = () => {
                     </button>
                   </div>
                 </div>
-  
+
                 <div className="space-y-4">
                   <div>
-                    <div className="text-white/80 text-sm">{event.society.name}</div>
+                    <div className="text-white/80 text-sm">
+                      {event.society.name}
+                    </div>
                     <h2 className="text-white text-xl font-bold">
                       {event.name.toUpperCase()}
                     </h2>
                   </div>
-  
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-white/90 text-sm">
                       <svg
@@ -230,38 +267,15 @@ const EventPage = () => {
                         />
                       </svg>
                       <span>
-                        {new Date(event.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
+                        {new Date(event.from).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </span>
                     </div>
-  
-                    <div className="flex items-center gap-2 text-white/90 text-sm">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      <span>KIIT University</span>
-                    </div>
-  
+
                     <div className="flex items-center gap-2 text-white/90 text-sm">
                       <svg
                         className="w-4 h-4"
@@ -285,18 +299,51 @@ const EventPage = () => {
           ))}
         </div>
       )}
-  
+
+      {events.data.length > 0 && (
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Page {events.currentPage} of {events.totalPages} (
+            {events.totalItems} events)
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={events.currentPage === 1}
+              className={`px-4 py-2 text-sm rounded-md ${
+                events.currentPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              } border`}
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+              disabled={!events.nextPage}
+              className={`px-4 py-2 text-sm rounded-md ${
+                !events.nextPage
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              } border`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       <DeleteConfirmation
         isOpen={!!deleteEventId}
         eventName={deleteEventName}
         onConfirm={() => deleteEventId && handleDeleteEvent(deleteEventId)}
         onCancel={() => {
           setDeleteEventId(null);
-          setDeleteEventName('');
+          setDeleteEventName("");
         }}
       />
     </div>
   );
-}
+};
 
 export default EventPage;

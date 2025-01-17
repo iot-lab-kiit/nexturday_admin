@@ -9,10 +9,12 @@ const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   password: z.string(),
   websiteUrl: z.string().url({ message: "Enter valid url" }),
-  phoneNumber: z.string().regex(
-    /^\s*(?:\+?(\d{1,3}))?([-. (]*(\d{3})[-. )]*)?((\d{3})[-. ]*(\d{2,4})(?:[-.x ]*(\d+))?)\s*$/gm,
-    "Enter valid phone number"
-  ),
+  phoneNumber: z
+    .string()
+    .regex(
+      /^\s*(?:\+?(\d{1,3}))?([-. (]*(\d{3})[-. )]*)?((\d{3})[-. ]*(\d{2,4})(?:[-.x ]*(\d+))?)\s*$/gm,
+      "Enter valid phone number"
+    ),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -80,14 +82,29 @@ const ProfilePage = () => {
     >
       {loading ? (
         <div className="flex items-center justify-center">
-          <svg className="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <svg
+            className="animate-spin h-8 w-8 text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
           </svg>
         </div>
       ) : (
         <div className="bg-white shadow-lg rounded-lg w-full max-w-4xl p-6 flex flex-col md:flex-row gap-6">
-          <div className="md:w-1/3 flex flex-col items-center border-r pr-6">
+          <div className="md:w-1/3 flex flex-col items-center border-r pr-6 my-auto">
             <div className="relative flex items-center justify-center w-28 h-28 mb-4">
               <img
                 src="/images/adminProfile.jpg"
@@ -119,16 +136,25 @@ const ProfilePage = () => {
             <hr className="md:hidden border-gray-300" />
             <div className="w-full flex flex-col gap-6">
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold" htmlFor="email">
+                <label
+                  className="text-gray-700 text-sm font-bold"
+                  htmlFor="email"
+                >
                   Email
                 </label>
-                <div id="email" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none">
+                <div
+                  id="email"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                >
                   {email}
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex-grow flex flex-col gap-2">
-                  <label className="text-gray-700 text-sm font-bold" htmlFor="password">
+                  <label
+                    className="text-gray-700 text-sm font-bold"
+                    htmlFor="password"
+                  >
                     Password
                   </label>
                   <input
@@ -146,7 +172,10 @@ const ProfilePage = () => {
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold" htmlFor="website">
+                <label
+                  className="text-gray-700 text-sm font-bold"
+                  htmlFor="website"
+                >
                   Website
                 </label>
                 <input
@@ -183,12 +212,27 @@ const ProfilePage = () => {
                     disabled={clicked}
                   >
                     {clicked ? (
-                      <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                     ) : (
-                      "Edit"
+                      "Save"
                     )}
                   </button>
                   <button
@@ -200,12 +244,27 @@ const ProfilePage = () => {
                     disabled={clicked}
                   >
                     {clicked ? (
-                      <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                     ) : (
-                      "Cancel"
+                      "Discard"
                     )}
                   </button>
                 </div>
