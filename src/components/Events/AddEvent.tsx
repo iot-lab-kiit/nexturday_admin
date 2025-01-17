@@ -423,14 +423,6 @@ const AddEvent: React.FC = () => {
     // Show loader toast
     const toastId = toast.loading("Submitting form...");
 
-    console.log("Emails (getAll):", formDataToSend.getAll("emails"));
-    console.log("Emails type:", typeof formDataToSend.getAll("emails"));
-    console.log("Guidelines (getAll):", formDataToSend.getAll("guidlines"));
-    console.log(
-      "Phone Numbers (getAll):",
-      formDataToSend.getAll("phoneNumbers")
-    );
-    console.log("till here");
     try {
 
       const response = await CreateEvent(formDataToSend);
