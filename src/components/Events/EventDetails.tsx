@@ -27,10 +27,8 @@ interface Event {
     from: string;
     to: string;
     type: string;
-    venue: {
-      mapUrl: string;
-      name: string;
-    };
+    venue: string;
+    venueId: string;
   }[];
 }
 
@@ -45,6 +43,8 @@ const EventDetails = () => {
       try {
         const response = await getEventDetails(id!);
         setEvent(response.data.data);
+        console.log(response);
+        
       } catch (error) {
         console.error("Error fetching event details:", error);
       } finally {
@@ -188,7 +188,7 @@ const EventDetails = () => {
                     <strong>Type:</strong> {subEvent.type}
                   </p>
                   <p>
-                    <strong>Venue:</strong> {subEvent.venue.name} - <a href={subEvent.venue.mapUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Map</a>
+                    <strong>Venue:</strong> {subEvent.venue}
                   </p>
                 </div>
               ))}

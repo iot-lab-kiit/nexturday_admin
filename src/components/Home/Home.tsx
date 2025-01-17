@@ -61,13 +61,13 @@ function Home() {
           </div>
           <Separator />
           <div className="w-full h-[15vh] p-2 mb-2">
-            <div
+            {/* <div
               onClick={() => setSelectedTab("societies")}
               className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
             >
               <MdGroups />
               <p>My Society</p>
-            </div>
+            </div> */}
             <div
               onClick={() => setSelectedTab("events")}
               className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
@@ -130,7 +130,7 @@ function Home() {
             <p className="text-gray-500">Select a section from the sidebar.</p>
           </div>
         )}
-        {selectedTab === "societies" && <SocietyPage />}
+        {/* {selectedTab === "societies" && <SocietyPage />} */}
         {selectedTab === "events" && <EventPage />}
       </div>
     </div>
