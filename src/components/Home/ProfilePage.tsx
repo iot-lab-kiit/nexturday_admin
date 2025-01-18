@@ -8,8 +8,8 @@ import { updateMetadata } from "@/utils/metadata";
 import { IoIosLogIn } from "react-icons/io";
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
-  password: z.string(),
-  websiteUrl: z.string().url({ message: "Enter valid url" }),
+  password: z.string().optional(),
+  websiteUrl: z.string().url({ message: "Enter valid url" }).optional().nullable(),
   phoneNumber: z
     .string()
     .regex(
@@ -70,13 +70,25 @@ const ProfilePage = () => {
     e.preventDefault();
     setClicked(true);
     try {
-      const response = await updateSocietyProfile(data);
+      const requestBody: any = {
+        name: data.name,
+        phoneNumber: data.phoneNumber,
+      };
+
+      if (data.password && data.password.trim()) {
+        requestBody.password = data.password;
+      }
+
+      if (data.websiteUrl && data.websiteUrl.trim()) {
+        requestBody.websiteUrl = data.websiteUrl;
+      }
+
+      const response = await updateSocietyProfile(requestBody);
       if (response.status === 200) {
-        // console.log("updated successfully");
+        navigate("/admin-dashboard");
       } else {
         console.error("Error updating");
       }
-      navigate("/admin-dashboard");
     } catch (error) {
       console.error("Error updating:", error);
     } finally {
