@@ -166,7 +166,7 @@ const EditEvent = () => {
   };
 
   const onError = (errors: any) => {
-    console.log("Form Errors:", errors);
+    // console.log("Form Errors:", errors);
     toast.error("Please fix all form errors before submitting");
   };
 

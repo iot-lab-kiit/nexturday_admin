@@ -72,7 +72,7 @@ const ProfilePage = () => {
     try {
       const response = await updateSocietyProfile(data);
       if (response.status === 200) {
-        console.log("updated successfully");
+        // console.log("updated successfully");
       } else {
         console.error("Error updating");
       }

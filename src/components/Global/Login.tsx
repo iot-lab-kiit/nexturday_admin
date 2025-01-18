@@ -40,14 +40,14 @@ function Login() {
   const login: SubmitHandler<FormData> = async (data) => {
     setClicked(true);
     setErrorMessage("");
-    console.log(data);
+    // console.log(data);
 
     try {
       const response = await loginSociety(data);
-      console.log(response.data);
+      // console.log(response.data);
 
       if (response.status === 201) {
-        console.log("Login successful");
+        // console.log("Login successful");
 
         const token = response.data.data.accessToken;
         sessionStorage.setItem("societyToken", token);

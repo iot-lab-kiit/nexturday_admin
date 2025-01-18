@@ -45,7 +45,7 @@ const EventDetails = () => {
       try {
         const response = await getEventDetails(id!);
         setEvent(response.data.data);
-        console.log(response);
+        // console.log(response);
         
         updateMetadata({
           title: response.data.data.name,

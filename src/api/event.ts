@@ -9,7 +9,7 @@ export const getEvents = async (page:number) => {
         direction: "desc",
       },
     });
-    console.log(response.data);
+    // console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching events:", error);
