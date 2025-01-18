@@ -450,10 +450,10 @@ const AddEvent: React.FC = () => {
   return (
     <main className="min-h-screen bg-gray-100 flex justify-center items-center px-6 lg:px-16 py-8">
       <div className="w-full max-w-5xl p-8 lg:p-12">
-        <div className="bg-gray-200 p-6 lg:p-8 rounded-t-lg">
+        <div className="bg-gray-800 p-6 lg:p-8 rounded-t-lg">
           <button
             type="button"
-            className="flex items-center text-gray-700 font-semibold mb-4 hover:text-blue-400 transition-all duration-300 focus:outline-none"
+            className="flex items-center text-white font-semibold mb-4 hover:text-blue-300 transition-all duration-300 focus:outline-none"
             onClick={() => {
               navigate("/admin-dashboard");
             }}
@@ -461,7 +461,7 @@ const AddEvent: React.FC = () => {
             <MdArrowBack className="mr-2" size={24} />
             Back
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">Add New Event</h1>
+          <h1 className="text-3xl font-bold text-white">Add New Event</h1>
         </div>
         {/* Form Section */}
         <div className="bg-white shadow-lg rounded-b-lg p-6 lg:p-8">
