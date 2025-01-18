@@ -280,7 +280,7 @@ const AddEvent: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("formData", formData);
+    // console.log("formData", formData);
     const {
       eventName,
       about,
@@ -430,7 +430,7 @@ const AddEvent: React.FC = () => {
       toast.dismiss(toastId);
       toast.success("Event Added successfully!");
 
-      console.log("Response:", response);
+      // console.log("Response:", response);
     } catch (error) {
       toast.dismiss(toastId);
       toast.error("Error submitting form. Please try again.");

@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create an Axios instance
 const instance = axios.create({
-  baseURL: "https://nexterday.iotkiit.in/",
+  baseURL: import.meta.env.VITE_BASE_URL,
   timeout: 10000, // 10 seconds timeout
 });
 
@@ -10,7 +10,7 @@ const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     const token = sessionStorage.getItem("societyToken");
-    console.log(token)
+    // console.log(token);
     //check whether token is 1 week expired or not
     let payload;
     if (token) {
@@ -22,7 +22,7 @@ instance.interceptors.request.use(
 
     if (currentTime > payload.exp) {
       sessionStorage.removeItem("societyToken");
-      console.log("Token expired");
+      // console.log("Token expired");
     }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
