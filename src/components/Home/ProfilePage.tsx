@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
+import { updateMetadata } from "@/utils/metadata";
 
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -29,6 +30,14 @@ const ProfilePage = () => {
 
   useEffect(() => {
     getProfile();
+  }, []);
+
+  useEffect(() => {
+    updateMetadata({
+      title: "Society Profile",
+      description: "Update and manage your society profile",
+      keywords: "profile, society, settings, nexturday",
+    });
   }, []);
 
   const {

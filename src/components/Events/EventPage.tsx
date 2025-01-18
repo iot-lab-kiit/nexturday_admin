@@ -4,6 +4,7 @@ import LoadingSpinner from "../Global/LoadingSpinner";
 import { deleteEvent, getEvents } from "@/api/event";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
+import { updateMetadata } from "@/utils/metadata";
 
 interface Event {
   id: string;
@@ -129,6 +130,14 @@ const EventPage = () => {
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
   const [deleteEventName, setDeleteEventName] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    updateMetadata({
+      title: "Events",
+      description: "Manage and view all events in Nexturday",
+      keywords: "events, management, nexturday, dashboard",
+    });
+  }, []);
 
   useEffect(() => {
     const fetchEvents = async () => {

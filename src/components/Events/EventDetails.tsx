@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import LoadingSpinner from '../Global/LoadingSpinner';
 import { getEventDetails } from '@/api/event';
 import { Icon } from '@iconify/react/dist/iconify.js';
+import { updateMetadata } from "@/utils/metadata";
 
 interface Event {
   id: string;
@@ -46,6 +47,11 @@ const EventDetails = () => {
         setEvent(response.data.data);
         console.log(response);
         
+        updateMetadata({
+          title: response.data.data.name,
+          description: response.data.data.about,
+          keywords: `event, ${response.data.data.name}, ${response.data.data.society.name}, nexturday`,
+        });
       } catch (error) {
         console.error("Error fetching event details:", error);
       } finally {
