@@ -145,7 +145,7 @@ const EventPage = () => {
         setLoading(true);
         const res = await getEvents(currentPage);
         console.log(res);
-        
+
         setEvents(res);
         toast.success("Events fetched successfully");
       } catch (error) {
@@ -160,7 +160,10 @@ const EventPage = () => {
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      await deleteEvent(eventId);
+      console.log("eventId", eventId);
+      const response = await deleteEvent(eventId);
+      console.log("response", response);
+      console.log("events",events)
       setEvents((prev) => ({
         ...prev,
         data: prev.data.filter((event) => event.id !== eventId),
@@ -327,10 +330,14 @@ const EventPage = () => {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Found</h3>
-            <p className="text-gray-600 mb-6">Start by creating your first event to engage with your audience.</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No Events Found
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Start by creating your first event to engage with your audience.
+            </p>
             <button
-              onClick={() => navigate('/add-event')}
+              onClick={() => navigate("/add-event")}
               className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
             >
               <svg

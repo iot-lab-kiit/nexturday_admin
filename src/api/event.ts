@@ -64,7 +64,7 @@ export const CreateEvent = async (formData: FormData) => {
 
     return response.data;
   } catch (error) {
-    console.error("Error deleting event:", error);
+    console.error("Error Creating event:", error);
     throw error;
   }
 };
