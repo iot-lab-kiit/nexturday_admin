@@ -58,10 +58,10 @@ function ChangePassword() {
           },
         }
       );
-      console.log(response);
+      // console.log(response);
 
       if (response.status === 200) {
-        console.log("Password updated successfully");
+        // console.log("Password updated successfully");
       } else {
         console.error("Error updating password");
       }

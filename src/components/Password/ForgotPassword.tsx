@@ -37,7 +37,7 @@ function ForgotPassword() {
     }
     // const response = await axios.patch(`${baseUrl}/api/society`, res);
     setClicked(true);
-    console.log(data);
+    // console.log(data);
   };
 
   return (

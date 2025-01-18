@@ -44,7 +44,7 @@ const EventDetails = () => {
       try {
         const response = await getEventDetails(id!);
         setEvent(response.data.data);
-        console.log(response);
+        // console.log(response);
         
       } catch (error) {
         console.error("Error fetching event details:", error);
