@@ -20,7 +20,7 @@ createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/admin-dashboard" element={<App />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        {/* <Route path="/profile" element={<ProfilePage />} /> */}
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/update-profile" element={<ProfilePage />} />
         <Route path="/add-event" element={<AddEvent />} />

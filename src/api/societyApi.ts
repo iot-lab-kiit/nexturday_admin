@@ -1,20 +1,17 @@
 import axios from "axios";
 
-export const updateSocietyProfile = async (data: {
+interface UpdateProfileData {
   name: string;
-  websiteUrl: string;
-  password: string;
   phoneNumber: string;
-}) => {
+  websiteUrl?: string;
+  password?: string;
+}
+
+export const updateSocietyProfile = async (data: UpdateProfileData) => {
   try {
     const response = await axios.patch(
       `${import.meta.env.VITE_BASE_URL}/api/society`,
-      {
-        name: data.name,
-        websiteUrl: data.websiteUrl,
-        password: data.password,
-        phoneNumber: data.phoneNumber,
-      },
+      data,
       {
         headers: {
           "Content-Type": "application/json",
