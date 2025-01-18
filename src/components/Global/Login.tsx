@@ -2,9 +2,10 @@ import { Icon } from "@iconify/react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { loginSociety } from "@/api/authApi";
+import { updateMetadata } from "@/utils/metadata";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -27,6 +28,14 @@ function Login() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  useEffect(() => {
+    updateMetadata({
+      title: "Login",
+      description: "Login to Nexturday Admin Dashboard",
+      keywords: "login, admin, nexturday, dashboard",
+    });
+  }, []);
 
   const login: SubmitHandler<FormData> = async (data) => {
     setClicked(true);

@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
+import { updateMetadata } from "@/utils/metadata";
 
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
-  password: z.string(),
-  websiteUrl: z.string().url({ message: "Enter valid url" }),
+  password: z.string().optional(),
+  websiteUrl: z.string().url({ message: "Enter valid url" }).optional().nullable(),
   phoneNumber: z
     .string()
     .regex(
@@ -29,6 +30,14 @@ const ProfilePage = () => {
 
   useEffect(() => {
     getProfile();
+  }, []);
+
+  useEffect(() => {
+    updateMetadata({
+      title: "Society Profile",
+      description: "Update and manage your society profile",
+      keywords: "profile, society, settings, nexturday",
+    });
   }, []);
 
   const {
@@ -61,13 +70,25 @@ const ProfilePage = () => {
     e.preventDefault();
     setClicked(true);
     try {
-      const response = await updateSocietyProfile(data);
+      const requestBody: any = {
+        name: data.name,
+        phoneNumber: data.phoneNumber,
+      };
+
+      if (data.password && data.password.trim()) {
+        requestBody.password = data.password;
+      }
+
+      if (data.websiteUrl && data.websiteUrl.trim()) {
+        requestBody.websiteUrl = data.websiteUrl;
+      }
+
+      const response = await updateSocietyProfile(requestBody);
       if (response.status === 200) {
-        // console.log("updated successfully");
+        navigate("/admin-dashboard");
       } else {
         console.error("Error updating");
       }
-      navigate("/admin-dashboard");
     } catch (error) {
       console.error("Error updating:", error);
     } finally {
@@ -144,7 +165,7 @@ const ProfilePage = () => {
                 </label>
                 <div
                   id="email"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                  className="w-full border bg-slate-100 text-slate-500 cursor-not-allowed border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                 >
                   {email}
                 </div>

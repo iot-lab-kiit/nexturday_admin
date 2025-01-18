@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { fetchEvent, updateEvent } from '@/api/editEventApi';
+import { updateMetadata } from "@/utils/metadata";
 
 
 const eventSchema = z.object({
@@ -67,6 +68,11 @@ const EditEvent = () => {
     mode: "onChange",
   });
 
+  // useEffect(() => {
+    
+  // }, []);
+  
+
   useEffect(() => {
     const loadEvent = async () => {
       try {
@@ -82,6 +88,11 @@ const EditEvent = () => {
         setValue("from", formatDateForInput(eventData.from));
         setValue("to", formatDateForInput(eventData.to));
         setValue("guidlines", eventData.guidlines.join("\n"));
+        updateMetadata({
+          title: `Edit ${eventData.name}`,
+          description: `Edit details for event: ${eventData.name}`,
+          keywords: `edit event, ${eventData.name}, ${eventData.society.name}, nexturday`,
+        });
 
         if (eventData.details && eventData.details[0]) {
           const subEvent = eventData.details[0];

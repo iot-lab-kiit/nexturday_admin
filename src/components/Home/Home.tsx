@@ -5,7 +5,6 @@ import { RiShutDownLine } from "react-icons/ri";
 import { FaPlus } from "react-icons/fa6";
 import { Menu, UserRoundPen, X } from "lucide-react";
 import EventPage from "../Events/EventPage";
-import { Separator } from "../ui/separator";
 import { getUserEmail } from "@/api/email";
 import { checkUser } from "@/api/checkUser";
 
@@ -108,7 +107,7 @@ function Home() {
         {/* <Separator /> */}
         <div className="flex flex-row text-xl font-semibold justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
           <UserRoundPen className="text-sm" />
-          <p onClick={() => navigate("/profile")} className="py-1 mx-auto">
+          <p onClick={() => navigate("/update-profile")} className="py-1 mx-auto">
             Edit Profile
           </p>
         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { getParticipants } from "@/api/event";
 import LoadingSpinner from "../Global/LoadingSpinner";
+import { updateMetadata } from "@/utils/metadata";
 
 interface ParticipantDetail {
   id: string;
@@ -92,6 +93,14 @@ const ParticipantsTable = () => {
 
     fetchParticipants();
   }, [id, currentPage]);
+
+  useEffect(() => {
+    updateMetadata({
+      title: "Event Participants",
+      description: "View and manage event participants",
+      keywords: "participants, events, management, nexturday",
+    });
+  }, []);
 
   if (loading) {
     return (
