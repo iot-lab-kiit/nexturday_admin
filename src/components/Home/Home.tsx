@@ -7,6 +7,7 @@ import { Menu, UserRoundPen, X } from "lucide-react";
 import EventPage from "../Events/EventPage";
 import { getUserEmail } from "@/api/email";
 import { checkUser } from "@/api/checkUser";
+import { url } from "inspector";
 
 function Home() {
   const [selectedTab, setSelectedTab] = useState<
@@ -68,44 +69,59 @@ function Home() {
             />
           </div>
 
-          <div className="h-[10vh] p-2 mx-2 py-20">
-            <div className="flex md:flex-row items-center justify-between">
-              <div className="flex flex-row items-center font-bold text-3xl m-auto">
-                Admin Panel
-              </div>
+          <div className="h-[10vh] p-4 mx-2 space-y-4">
+            {/* Header */}
+            <div
+              className="relative m-auto p-4 w-[full] h-[15vh] bg-cover bg-center bg-no-repeat rounded-lg shadow-inner flex items-start"
+              style={{
+                backgroundImage:
+                  "url('https://i0.wp.com/backgroundabstract.com/wp-content/uploads/edd/2022/01/vecteezy_abstract-blue-and-orange-wave-business-background_-e1656072952998.jpg?resize=1000%2C750&ssl=1')",
+              }}
+            >
+              <span className="text-slate-900 text-xl font-bold p-2  rounded-md ">
+                {userName || "Society"}
+              </span>
             </div>
-            <p className="text-lg text-slate-200 m-auto text-center">
-              {userName || ""} : {userEmail || ""}
-            </p>
-          </div>
 
-          <div className="w-full mb-2 text-xl font-semibold">
-            {/* <div
+            <div className="flex flex-row items-center justify-center font-bold text-3xl">
+              Admin Panel
+            </div>
+
+            {/* Business Card Section */}
+
+            {/* User Email */}
+            <p className="text-slate-200 text-center text-sm">
+              {userEmail || ""}
+            </p>
+            <div className="w-full mb-2 text-xl font-semibold">
+              {/* <div
               onClick={() => setSelectedTab("societies")}
               className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
             >
               <MdGroups />
               <p>My Society</p>
             </div> */}
-            <div
-              onClick={() => setSelectedTab("events")}
-              className="flex pt-6 flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
-            >
-              <MdEventAvailable />
-              <p>Events</p>
+              <div
+                onClick={() => setSelectedTab("events")}
+                className="flex  flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
+              >
+                <MdEventAvailable />
+                <p>Events</p>
+              </div>
+              <div
+                onClick={() => navigate("/add-event")}
+                className="flex flex-row text-sm font-semibold justify-center gap-2 items-center py-2 px-6 w-fit m-auto mt-4 hover:text-gray-400 cursor-pointer border-2 rounded-xl"
+              >
+                <FaPlus className="" />
+                <p>Add Events</p>
+              </div>
             </div>
           </div>
+
           {/* <Separator /> */}
-          <div
-            onClick={() => navigate("/add-event")}
-            className="flex flex-row text-xl font-semibold justify-center gap-2 items-center py-2 px-6 w-fit m-auto mt-4 hover:text-gray-400 cursor-pointer border-2 rounded-xl"
-          >
-            <FaPlus className="" />
-            <p>Add Events</p>
-          </div>
         </div>
         {/* <Separator /> */}
-        <div className="flex flex-row text-xl font-semibold justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
+        <div className="flex flex-row font-semibold justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
           <UserRoundPen className="text-sm" />
           <p onClick={() => navigate("/update-profile")} className="py-1 mx-auto">
             Edit Profile
@@ -120,7 +136,7 @@ function Home() {
               setIsLoggedin(false);
               navigate("/");
             }}
-            className="flex text-xl pb-7 font-semibold flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
+            className="flex  pb-7 font-semibold flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto"
           >
             <RiShutDownLine />
             <p>Logout</p>
