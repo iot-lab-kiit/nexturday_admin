@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
+import { updateMetadata } from "@/utils/metadata";
 
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -29,6 +30,14 @@ const ProfilePage = () => {
 
   useEffect(() => {
     getProfile();
+  }, []);
+
+  useEffect(() => {
+    updateMetadata({
+      title: "Society Profile",
+      description: "Update and manage your society profile",
+      keywords: "profile, society, settings, nexturday",
+    });
   }, []);
 
   const {
@@ -144,7 +153,7 @@ const ProfilePage = () => {
                 </label>
                 <div
                   id="email"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                  className="w-full border bg-slate-100 text-slate-500 cursor-not-allowed border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                 >
                   {email}
                 </div>
