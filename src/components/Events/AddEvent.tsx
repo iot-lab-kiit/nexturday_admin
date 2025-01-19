@@ -9,9 +9,8 @@ import { MdArrowBack, MdDelete, MdOutlineFileUpload } from "react-icons/md";
 import { CiCirclePlus } from "react-icons/ci";
 import { AiOutlineDelete } from "react-icons/ai";
 import { fetchEvent, updateEvent } from "@/api/editEventApi";
-import { isDataView } from "util/types";
 import LoadingSpinner from "../Global/LoadingSpinner";
-import Sidebar from "../Global/Sidebar";
+// import Sidebar from "../Global/Sidebar";
 
 type EventType = "ONLINE" | "OFFLINE";
 
@@ -48,11 +47,29 @@ interface FormDataType {
   isPaidEvent: boolean;
   price?: number;
   deadline: string;
-  selectedFiles: File[]; // New uploaded images
-  backendImages?: BackendImage[]; // Images from backend
+  selectedFiles: File[];
+  backendImages?: BackendImage[];
   imagesKeys?: string[];
   details: DetailType[];
 }
+
+type ApiResponse = {
+  name?: string;
+  about?: string;
+  guidlines?: string[];
+  type?: EventType;
+  from?: string;
+  to?: string;
+  websiteUrl?: string;
+  emails?: string[];
+  phoneNumbers?: string[];
+  registrationUrl?: string;
+  paid?: boolean;
+  price?: number;
+  deadline?: string;
+  images?: BackendImage[];
+  details?: DetailType[];
+};
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -145,7 +162,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
           setloading(true);
           const response = await fetchEvent(eventID);
 
-
           const transformedData = await transformApiResponseToFormData(
             response
           );
@@ -164,26 +180,26 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   }, [isEditing, id]);
 
   const transformApiResponseToFormData = async (
-    apiData: any
+    apiData: ApiResponse
   ): Promise<FormDataType> => {
     return {
       eventName: apiData.name || "",
       about: apiData.about || "",
       guidelines: apiData.guidlines || [""],
       eventType: apiData.type || "ONLINE",
-      fromDate: formatDateForInput(apiData.from),
-      toDate: formatDateForInput(apiData.to),
+      fromDate: formatDateForInput(apiData.from || ""),
+      toDate: formatDateForInput(apiData.to || ""),
       website: apiData.websiteUrl || "",
       emails: apiData.emails || [""],
       contactNumbers: apiData.phoneNumbers || [""],
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
       price: apiData.price || 0,
-      deadline: formatDateForInput(apiData.deadline),
-      selectedFiles: [], // Start with an empty array for new uploads
-      backendImages: apiData.images || [], // Map directly to backendImages
+      deadline: formatDateForInput(apiData.deadline || ""),
+      selectedFiles: [],
+      backendImages: apiData.images || [],
       details:
-        apiData.details?.map((subEvent: any) => ({
+        apiData.details?.map((subEvent: DetailType) => ({
           name: subEvent.name || "",
           about: subEvent.about || "",
           from: formatDateForInput(subEvent.from),
@@ -198,13 +214,13 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
   const formatDateForInput = (date: string) => {
     if (!date) return "";
-    const localDate = new Date(date); // Parse the input date
+    const localDate = new Date(date);
     const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const month = String(localDate.getMonth() + 1).padStart(2, "0");
     const day = String(localDate.getDate()).padStart(2, "0");
     const hours = String(localDate.getHours()).padStart(2, "0");
     const minutes = String(localDate.getMinutes()).padStart(2, "0");
-    // Format the date for the input field (yyyy-MM-ddTHH:mm)
+
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
@@ -233,10 +249,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     }));
   };
 
-  const handleFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof FormDataType
-  ) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
@@ -259,7 +272,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
               maxWidthOrHeight: 1024,
               useWebWorker: true,
             });
-          
+
             return compressedFile;
           } catch (error) {
             console.error("Compression failed for file:", file.name, error);
@@ -283,11 +296,15 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const handleRemoveImage = (index: number, isBackend: boolean) => {
     if (isBackend) {
       setFormData((prev) => {
-        const removedKey = prev.backendImages[index].key; // Extract the key of the removed backend image
+        const backendImages = prev.backendImages || [];
+        const removedKey = backendImages[index]?.key;
+
         return {
           ...prev,
-          backendImages: prev.backendImages.filter((_, i) => i !== index),
-          imagesKeys: [...(prev.imagesKeys || []), removedKey], // Safely spread or fallback to []
+          backendImages: backendImages.filter((_, i) => i !== index),
+          imagesKeys: removedKey
+            ? [...(prev.imagesKeys || []), removedKey]
+            : prev.imagesKeys || [],
         };
       });
     } else {
@@ -336,7 +353,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
   const handleContactNumberChange = (index: number, value: string) => {
     const updatedContacts = [...formData.contactNumbers];
-    updatedContacts[index] = value.trim(); // Remove leading/trailing spaces
+    updatedContacts[index] = value.trim();
     setFormData((prev) => ({
       ...prev,
       contactNumbers: updatedContacts,
@@ -349,7 +366,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     );
     setFormData((prev) => ({
       ...prev,
-      contactNumbers: updatedContacts.length > 0 ? updatedContacts : [""], // Remove empty strings
+      contactNumbers: updatedContacts.length > 0 ? updatedContacts : [""],
     }));
   };
 
@@ -445,7 +462,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
     setIsSubmitting(true);
 
-    // console.log("formData", formData);
+    console.log("formData", formData);
     const {
       eventName,
       about,
@@ -525,6 +542,12 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     if (invalidNumbers.length > 0) {
       return handleError(
         `Invalid phone number(s): ${invalidNumbers.join(", ")}`
+      );
+    }
+
+    if(details.length === 0){
+      return handleError(
+        `Details should not be empty`
       );
     }
 
@@ -644,8 +667,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     });
 
     if (isEditing && imagesKeys && imagesKeys.length > 0) {
-      formData.imagesKeys?.forEach((key) => {
-        formDataToSend.append(`imagesKeys`, key);
+      formData.imagesKeys?.forEach((key, index) => {
+        formDataToSend.append(`imagesKeys[${index}]`, key);
       });
     }
 
@@ -655,7 +678,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     try {
       if (isEditing) {
         const response = await updateEvent(id, formDataToSend);
-
       } else {
         const response = await CreateEvent(formDataToSend);
       }
@@ -665,7 +687,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         isEditing ? "Event Updated successfully!" : "Event Added successfully!"
       );
 
-      navigate("/admin-dashboard");
+      // navigate("/admin-dashboard");
 
       // console.log("Response:", response);
     } catch (error) {
@@ -772,11 +794,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                     accept="image/*"
                     className="hidden"
                     multiple
-                    onChange={(e) => handleFileChange(e, "selectedFiles")}
+                    onChange={(e) => handleFileChange(e)}
                   />
 
                   {/* Display Backend Images */}
-                  {formData.backendImages.length > 0 && (
+                  {formData?.backendImages && formData.backendImages.length && (
                     <div className="mt-4">
                       <p className="text-gray-700 text-sm font-semibold">
                         Existing Images:
