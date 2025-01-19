@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import LoadingSpinner from '../Global/LoadingSpinner';
-import { getEventDetails } from '@/api/event';
-import { Icon } from '@iconify/react/dist/iconify.js';
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import LoadingSpinner from "../Global/LoadingSpinner";
+import { getEventDetails } from "@/api/event";
+import { Icon } from "@iconify/react/dist/iconify.js";
 import { updateMetadata } from "@/utils/metadata";
 
 interface Event {
@@ -46,7 +46,7 @@ const EventDetails = () => {
         const response = await getEventDetails(id!);
         setEvent(response.data.data);
         // console.log(response);
-        
+
         updateMetadata({
           title: response.data.data.name,
           description: response.data.data.about,
@@ -63,9 +63,11 @@ const EventDetails = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="text-center py-10">
-      <LoadingSpinner/>
-    </div>;
+    return (
+      <div className="text-center py-10">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (!event) {
@@ -92,7 +94,9 @@ const EventDetails = () => {
         </div>
 
         <button
-          onClick={() => window.history.back()}
+          onClick={() => {
+            navigate("/admin-dashboard");
+          }}
           className="fixed lg:absolute top-4 left-4 z-10 text-white/90 flex items-center gap-2 hover:text-white"
         >
           <svg
@@ -287,7 +291,7 @@ const EventDetails = () => {
                 icon="gg:details-more"
                 width="24"
                 height="24"
-                style={{color: "#fff"}}
+                style={{ color: "#fff" }}
               />
               Edit Event
             </button>
@@ -298,4 +302,4 @@ const EventDetails = () => {
   );
 };
 
-export default EventDetails; 
+export default EventDetails;

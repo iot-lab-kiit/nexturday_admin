@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { MdDelete } from "react-icons/md";
 import toast from "react-hot-toast";
 import { CreateEvent } from "@/api/event";
+import { useNavigate } from "react-router";
 type EventType = "ONLINE" | "OFFLINE";
 
 interface VenueType {
@@ -76,6 +77,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 };
 
 const AddEvent: React.FC = () => {
+  const navigate=useNavigate();
   const [formData, setFormData] = useState<FormDataType>({
     eventName: "",
     about: "",
@@ -429,6 +431,7 @@ const AddEvent: React.FC = () => {
 
       toast.dismiss(toastId);
       toast.success("Event Added successfully!");
+      navigate("/admin-dashboard");
 
       // console.log("Response:", response);
     } catch (error) {
