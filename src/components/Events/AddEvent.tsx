@@ -1,12 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { CreateEvent } from "@/api/event";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import imageCompression from "browser-image-compression";
 
 //React icons
 import { MdArrowBack, MdDelete, MdOutlineFileUpload } from "react-icons/md";
 import { CiCirclePlus } from "react-icons/ci";
 import { AiOutlineDelete } from "react-icons/ai";
+import { fetchEvent, updateEvent } from "@/api/editEventApi";
+import { isDataView } from "util/types";
+import LoadingSpinner from "../Global/LoadingSpinner";
+import Sidebar from "../Global/Sidebar";
 
 type EventType = "ONLINE" | "OFFLINE";
 
@@ -24,6 +29,11 @@ interface DetailType {
   venue: VenueType;
 }
 
+interface BackendImage {
+  url: string;
+  key: string;
+}
+
 interface FormDataType {
   eventName: string;
   about: string;
@@ -38,7 +48,9 @@ interface FormDataType {
   isPaidEvent: boolean;
   price?: number;
   deadline: string;
-  selectedFiles: File[];
+  selectedFiles: File[]; // New uploaded images
+  backendImages?: BackendImage[]; // Images from backend
+  imagesKeys?: string[];
   details: DetailType[];
 }
 
@@ -49,6 +61,10 @@ interface ConfirmationModalProps {
   message: string;
 }
 
+interface AddEventProps {
+  isEditing?: boolean;
+  // eventID?: string;
+}
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
   onClose,
@@ -81,7 +97,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   );
 };
 
-const AddEvent: React.FC = () => {
+const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
+  const { id } = useParams();
   const [formData, setFormData] = useState<FormDataType>({
     eventName: "",
     about: "",
@@ -97,6 +114,8 @@ const AddEvent: React.FC = () => {
     price: 0,
     deadline: "",
     selectedFiles: [],
+    backendImages: [],
+    imagesKeys: [],
     details: [
       {
         name: "",
@@ -115,8 +134,79 @@ const AddEvent: React.FC = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setloading] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isEditing && id) {
+      const fetchEventById = async (eventID: string) => {
+        try {
+          setloading(true);
+          const response = await fetchEvent(eventID);
+
+
+          const transformedData = await transformApiResponseToFormData(
+            response
+          );
+
+          setFormData(transformedData);
+        } catch (error) {
+          console.error("Error fetching event data:", error);
+          toast.error("Failed to load event data for editing.");
+        } finally {
+          setloading(false);
+        }
+      };
+
+      fetchEventById(id);
+    }
+  }, [isEditing, id]);
+
+  const transformApiResponseToFormData = async (
+    apiData: any
+  ): Promise<FormDataType> => {
+    return {
+      eventName: apiData.name || "",
+      about: apiData.about || "",
+      guidelines: apiData.guidlines || [""],
+      eventType: apiData.type || "ONLINE",
+      fromDate: formatDateForInput(apiData.from),
+      toDate: formatDateForInput(apiData.to),
+      website: apiData.websiteUrl || "",
+      emails: apiData.emails || [""],
+      contactNumbers: apiData.phoneNumbers || [""],
+      registrationUrl: apiData.registrationUrl || "",
+      isPaidEvent: apiData.paid || false,
+      price: apiData.price || 0,
+      deadline: formatDateForInput(apiData.deadline),
+      selectedFiles: [], // Start with an empty array for new uploads
+      backendImages: apiData.images || [], // Map directly to backendImages
+      details:
+        apiData.details?.map((subEvent: any) => ({
+          name: subEvent.name || "",
+          about: subEvent.about || "",
+          from: formatDateForInput(subEvent.from),
+          to: formatDateForInput(subEvent.to),
+          type: subEvent.type || "ONLINE",
+          venue: subEvent.venue
+            ? { name: subEvent.venue.name, mapUrl: subEvent.venue.mapUrl }
+            : { name: "", mapUrl: "" },
+        })) || [],
+    };
+  };
+
+  const formatDateForInput = (date: string) => {
+    if (!date) return "";
+    const localDate = new Date(date); // Parse the input date
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const day = String(localDate.getDate()).padStart(2, "0");
+    const hours = String(localDate.getHours()).padStart(2, "0");
+    const minutes = String(localDate.getMinutes()).padStart(2, "0");
+    // Format the date for the input field (yyyy-MM-ddTHH:mm)
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -143,39 +233,73 @@ const AddEvent: React.FC = () => {
     }));
   };
 
-  const handleFileChange = (
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    key: string
+    key: keyof FormDataType
   ) => {
     const files = e.target.files;
     if (!files) return;
 
     const newFiles = Array.from(files);
-    const currentFiles = formData[key as keyof FormDataType] as File[]; // Get the current files
-    const totalFiles = currentFiles.concat(newFiles);
+    const currentFiles = formData.selectedFiles;
 
-    if (totalFiles.length > 5) {
-      return handleError("You can upload a maximum of 5 images.");
-      e.target.value = ""; // Reset the input value
+    // Check file limit
+    if (currentFiles.length + newFiles.length > 5) {
+      handleError("You can upload a maximum of 5 images.");
+      e.target.value = ""; // Reset input
       return;
     }
 
-    e.target.value = ""; // Reset the input value to allow re-selection
-    setFormData((prev) => ({
-      ...prev,
-      [key]: totalFiles, // Update the array of selected files
-    }));
+    try {
+      const compressedFiles = await Promise.all(
+        newFiles.map(async (file) => {
+          try {
+            const compressedFile = await imageCompression(file, {
+              maxSizeMB: 1,
+              maxWidthOrHeight: 1024,
+              useWebWorker: true,
+            });
+          
+            return compressedFile;
+          } catch (error) {
+            console.error("Compression failed for file:", file.name, error);
+            return file; // Fallback to original file
+          }
+        })
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        selectedFiles: currentFiles.concat(compressedFiles),
+      }));
+    } catch (error) {
+      console.error("Error during file processing:", error);
+      handleError("Failed to process the selected files.");
+    } finally {
+      e.target.value = ""; // Reset input value
+    }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setFormData((prev) => {
-      const updatedFiles = [...prev.selectedFiles]; // Clone the current files
-      updatedFiles.splice(index, 1); // Remove the specific file at the given index
-      return {
-        ...prev,
-        selectedFiles: updatedFiles, // Update the selectedFiles array
-      };
-    });
+  const handleRemoveImage = (index: number, isBackend: boolean) => {
+    if (isBackend) {
+      setFormData((prev) => {
+        const removedKey = prev.backendImages[index].key; // Extract the key of the removed backend image
+        return {
+          ...prev,
+          backendImages: prev.backendImages.filter((_, i) => i !== index),
+          imagesKeys: [...(prev.imagesKeys || []), removedKey], // Safely spread or fallback to []
+        };
+      });
+    } else {
+      setFormData((prev) => {
+        const updatedFiles = [...prev.selectedFiles];
+        updatedFiles.splice(index, 1);
+        return {
+          ...prev,
+          selectedFiles: updatedFiles,
+        };
+      });
+    }
   };
 
   const handleAddGuideline = () => {
@@ -337,6 +461,8 @@ const AddEvent: React.FC = () => {
       details,
       website,
       registrationUrl,
+      imagesKeys,
+      backendImages,
     } = formData;
 
     if (
@@ -354,7 +480,10 @@ const AddEvent: React.FC = () => {
     }
 
     // Add this check in the validation section
-    if (!formData.selectedFiles || formData.selectedFiles.length === 0) {
+    if (
+      (!backendImages || backendImages.length === 0) &&
+      (!formData.selectedFiles || formData.selectedFiles.length === 0)
+    ) {
       return handleError("Please upload at least one image!");
     }
 
@@ -373,7 +502,6 @@ const AddEvent: React.FC = () => {
 
     if (fromISO > toISO) {
       return handleError("Event start date cannot be later than the end date!");
-      return;
     }
 
     if (new Date(deadline).toISOString() >= toISO) {
@@ -431,6 +559,30 @@ const AddEvent: React.FC = () => {
           }'s dates must be within the range of the main event dates!`
         );
       }
+
+      for (let otherIndex = 0; otherIndex < details.length; otherIndex++) {
+        if (otherIndex !== index) {
+          const otherDetailFrom = new Date(
+            details[otherIndex].from
+          ).toISOString();
+          const otherDetailTo = new Date(details[otherIndex].to).toISOString();
+
+          if (
+            (subEventFromDate >= otherDetailFrom &&
+              subEventFromDate < otherDetailTo) ||
+            (subEventToDate > otherDetailFrom &&
+              subEventToDate <= otherDetailTo) ||
+            (subEventFromDate <= otherDetailFrom &&
+              subEventToDate >= otherDetailTo)
+          ) {
+            return handleError(
+              `Sub Event ${index + 1} conflicts with Sub Event ${
+                otherIndex + 1
+              }. Dates and times should not overlap!`
+            );
+          }
+        }
+      }
     }
 
     if (isPaidEvent) {
@@ -483,34 +635,46 @@ const AddEvent: React.FC = () => {
       ...detail,
       from: new Date(detail.from).toISOString(),
       to: new Date(detail.to).toISOString(),
-      venue:
-        formData.eventType === "ONLINE"
-          ? { name: " ", mapUrl: " " }
-          : detail.venue,
+      venue: detail.type === "ONLINE" ? { name: "", mapUrl: "" } : detail.venue,
     }));
 
-    // Append formatted details to FormData
     formDataToSend.append("details", JSON.stringify(formattedDetails));
     formData.selectedFiles.forEach((file) => {
       formDataToSend.append("images", file);
     });
 
+    if (isEditing && imagesKeys && imagesKeys.length > 0) {
+      formData.imagesKeys?.forEach((key) => {
+        formDataToSend.append(`imagesKeys`, key);
+      });
+    }
+
     // Show loader toast
     const toastId = toast.loading("Submitting form...");
 
     try {
-      const response = await CreateEvent(formDataToSend);
+      if (isEditing) {
+        const response = await updateEvent(id, formDataToSend);
+
+      } else {
+        const response = await CreateEvent(formDataToSend);
+      }
 
       toast.dismiss(toastId);
-      toast.success("Event Added successfully!");
+      toast.success(
+        isEditing ? "Event Updated successfully!" : "Event Added successfully!"
+      );
+
       navigate("/admin-dashboard");
 
       // console.log("Response:", response);
     } catch (error) {
       toast.dismiss(toastId);
       console.error("Error:", error);
-      setIsSubmitting(false);
+
       return handleError("Error submitting form. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -519,656 +683,707 @@ const AddEvent: React.FC = () => {
     toast.error(message);
   };
 
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
   return (
-    <main className="min-h-screen bg-gray-100 flex justify-center items-center px-6 lg:px-16 py-8">
-      <div className="w-full max-w-5xl p-8 lg:p-12">
-        <div className=" w-full flex items-center justify-between bg-gray-500 p-6 lg:p-8 rounded-t-lg ">
-          <button
-            type="button"
-            className="flex items-center text-white font-semibold hover:text-black transition-all duration-300 focus:outline-none"
-            onClick={() => {
-              navigate("/admin-dashboard");
-            }}
-          >
-            <MdArrowBack className="mr-2" size={24} />
-            Back
-          </button>
+    <>
+      {/* <Sidebar /> */}
+      <main className="min-h-screen bg-gray-100 flex justify-center items-center px-6 lg:px-16 py-8">
+        <div className="w-full max-w-5xl p-8 lg:p-12">
+          <div className=" w-full flex items-center justify-between bg-gray-500 p-6 lg:p-8 rounded-t-lg ">
+            <button
+              type="button"
+              className="flex items-center text-white font-semibold hover:text-black transition-all duration-300 focus:outline-none"
+              onClick={() => {
+                navigate("/admin-dashboard");
+              }}
+            >
+              <MdArrowBack className="mr-2" size={24} />
+              Back
+            </button>
 
-          <h1 className="text-3xl font-bold text-white">Add New Event</h1>
-        </div>
-        {/* Form Section */}
-        <div className="bg-white shadow-lg rounded-b-lg p-6 lg:p-8">
-          <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-            <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Basic Information
-            </div>
-            <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
-              {/* Event Name */}
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-gray-700 text-sm font-bold"
-                  htmlFor="eventName"
+            <h1 className="text-3xl font-bold text-white">
+              {isEditing ? " Update Your Event" : " Add New Event"}
+            </h1>
+          </div>
+          {/* Form Section */}
+          <div className="bg-white shadow-lg rounded-b-lg p-6 lg:p-8">
+            <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  Event Name <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="eventName"
-                  placeholder="Enter event name"
-                  value={formData.eventName}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                Basic Information
               </div>
-
-              {/* Event Images */}
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">
-                  Event Images <span className="text-red-500 ml-1">*</span>
-                </label>
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      document.getElementById("eventImages")?.click()
-                    }
-                    className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
+              <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
+                {/* Event Name */}
+                <div className="flex flex-col gap-2">
+                  <label
+                    className="text-gray-700 text-sm font-bold"
+                    htmlFor="eventName"
                   >
-                    <MdOutlineFileUpload size={20} /> <span>Upload Images</span>
-                  </button>
-                  <span className="text-gray-500 text-sm">
-                    (You can upload up to 5 images)
-                  </span>
+                    Event Name <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="eventName"
+                    placeholder="Enter event name"
+                    value={formData.eventName}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                  />
                 </div>
-                <input
-                  type="file"
-                  id="eventImages"
-                  accept="image/*"
-                  className="hidden"
-                  multiple
-                  onChange={(e) => handleFileChange(e, "selectedFiles")}
-                />
 
-                {/* Display Image Previews */}
-                {formData.selectedFiles.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {formData.selectedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="relative border rounded-lg overflow-hidden group"
-                      >
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Event Image ${index + 1}`}
-                          className="w-full h-32 object-cover"
-                        />
+                {/* Event Images */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-gray-700 text-sm font-bold">
+                    Event Images <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document.getElementById("eventImages")?.click()
+                      }
+                      className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
+                    >
+                      <MdOutlineFileUpload size={20} />{" "}
+                      <span>Upload Images</span>
+                    </button>
+                    <span className="text-gray-500 text-sm">
+                      (You can upload up to 5 images)
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    id="eventImages"
+                    accept="image/*"
+                    className="hidden"
+                    multiple
+                    onChange={(e) => handleFileChange(e, "selectedFiles")}
+                  />
+
+                  {/* Display Backend Images */}
+                  {formData.backendImages.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-gray-700 text-sm font-semibold">
+                        Existing Images:
+                      </p>
+                      <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {formData.backendImages?.map((image, index) => (
+                          <div
+                            key={image.key}
+                            className="relative border rounded-lg overflow-hidden group"
+                          >
+                            <img
+                              src={image.url}
+                              alt={`Backend Image ${index + 1}`}
+                              className="w-full h-32 object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index, true)}
+                              className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                              aria-label="Remove backend image"
+                            >
+                              <MdDelete size={18} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Display Newly Uploaded Images */}
+                  {formData.selectedFiles.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-gray-700 text-sm font-semibold">
+                        Newly Uploaded Images:
+                      </p>
+                      <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {formData.selectedFiles.map((file, index) => {
+                          const previewUrl = URL.createObjectURL(file); // Generate preview dynamically
+                          return (
+                            <div
+                              key={index}
+                              className="relative border rounded-lg overflow-hidden group"
+                            >
+                              <img
+                                src={previewUrl}
+                                alt={`Uploaded Image ${index + 1}`}
+                                className="w-full h-32 object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleRemoveImage(index, false); // Remove uploaded image
+                                  URL.revokeObjectURL(previewUrl); // Revoke URL to free memory
+                                }}
+                                className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                                aria-label="Remove uploaded image"
+                              >
+                                <MdDelete size={18} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* About */}
+                <div className="flex flex-col gap-2">
+                  <label
+                    className="text-gray-700 text-sm font-bold"
+                    htmlFor="about"
+                  >
+                    About <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <textarea
+                    id="about"
+                    rows={4}
+                    placeholder="Enter event description"
+                    value={formData.about}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none resize-none"
+                  ></textarea>
+                </div>
+
+                {/* Guidelines Section */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-gray-700 text-sm font-bold">
+                    Guidelines <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  {formData.guidelines.map((guideline, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={guideline}
+                        onChange={(e) =>
+                          handleGuidelineChange(index, e.target.value)
+                        }
+                        placeholder={`Guideline ${index + 1}`}
+                        className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring focus:ring-blue-300 focus:outline-none"
+                      />
+                      {index > 0 && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
-                          aria-label="Remove image"
+                          onClick={() => handleRemoveGuideline(index)}
+                          className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
+                          aria-label="Delete guideline"
                         >
-                          <MdDelete size={18} />
+                          <AiOutlineDelete size={20} />
                         </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Display Image Preview */}
-              {formData.selectedFiles &&
-                formData.selectedFiles.map((file) => (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-700">Selected Image:</p>
-                    <div className="mt-2 border rounded-lg overflow-hidden">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt="Selected Event"
-                        className="w-full h-64 object-contain"
-                      />
+                      )}
                     </div>
+                  ))}
+                  <div
+                    onClick={handleAddGuideline}
+                    className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
+                  >
+                    <CiCirclePlus size={24} />
+                    <span className="text-sm font-medium">
+                      Add Another Guideline
+                    </span>
                   </div>
-                ))}
-
-              {/* About */}
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-gray-700 text-sm font-bold"
-                  htmlFor="about"
-                >
-                  About <span className="text-red-500 ml-1">*</span>
-                </label>
-                <textarea
-                  id="about"
-                  rows={4}
-                  placeholder="Enter event description"
-                  value={formData.about}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none resize-none"
-                ></textarea>
-              </div>
-
-              {/* Guidelines Section */}
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">
-                  Guidelines <span className="text-red-500 ml-1">*</span>
-                </label>
-                {formData.guidelines.map((guideline, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      value={guideline}
-                      onChange={(e) =>
-                        handleGuidelineChange(index, e.target.value)
-                      }
-                      placeholder={`Guideline ${index + 1}`}
-                      className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring focus:ring-blue-300 focus:outline-none"
-                    />
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveGuideline(index)}
-                        className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
-                        aria-label="Delete guideline"
-                      >
-                        <AiOutlineDelete size={20} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div
-                  onClick={handleAddGuideline}
-                  className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
-                >
-                  <CiCirclePlus size={24} />
-                  <span className="text-sm font-medium">
-                    Add Another Guideline
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              Contact Information
-            </div>
-            <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
-              {/* Emails Section */}
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">
-                  Emails <span className="text-red-500 ml-1">*</span>
-                </label>
-                {formData.emails.map((email, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => handleEmailChange(index, e.target.value)}
-                      placeholder={`Email ${index + 1}`}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                    />
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEmail(index)}
-                        className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
-                        aria-label="Delete guideline"
-                      >
-                        <AiOutlineDelete size={20} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                <div
-                  onClick={handleAddEmail}
-                  className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
-                >
-                  <CiCirclePlus size={24} />
-                  <span className="text-sm font-medium">Add Email</span>
                 </div>
               </div>
 
-              {/* Contact Numbers Section */}
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 text-sm font-bold">
-                  Contact Numbers <span className="text-red-500 ml-1">*</span>
-                </label>
-                {formData.contactNumbers.map((contact, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={contact}
-                      onChange={(e) =>
-                        handleContactNumberChange(index, e.target.value)
-                      }
-                      placeholder={`Contact Number ${index + 1}`}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                    />
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveContactNumber(index)}
-                        className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
-                        aria-label="Delete guideline"
-                      >
-                        <AiOutlineDelete size={20} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div
-                  onClick={handleAddContactNumber}
-                  className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <CiCirclePlus size={24} />
-                  <span className="text-sm font-medium">
-                    {" "}
-                    Add Contact Number
-                  </span>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                Contact Information
+              </div>
+              <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
+                {/* Emails Section */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-gray-700 text-sm font-bold">
+                    Emails <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  {formData.emails.map((email, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) =>
+                          handleEmailChange(index, e.target.value)
+                        }
+                        placeholder={`Email ${index + 1}`}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                      />
+                      {index > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEmail(index)}
+                          className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
+                          aria-label="Delete guideline"
+                        >
+                          <AiOutlineDelete size={20} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  <div
+                    onClick={handleAddEmail}
+                    className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
+                  >
+                    <CiCirclePlus size={24} />
+                    <span className="text-sm font-medium">Add Email</span>
+                  </div>
+                </div>
+
+                {/* Contact Numbers Section */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-gray-700 text-sm font-bold">
+                    Contact Numbers <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  {formData.contactNumbers.map((contact, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={contact}
+                        onChange={(e) =>
+                          handleContactNumberChange(index, e.target.value)
+                        }
+                        placeholder={`Contact Number ${index + 1}`}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                      />
+                      {index > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveContactNumber(index)}
+                          className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
+                          aria-label="Delete guideline"
+                        >
+                          <AiOutlineDelete size={20} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <div
+                    onClick={handleAddContactNumber}
+                    className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
+                  >
+                    <CiCirclePlus size={24} />
+                    <span className="text-sm font-medium">
+                      {" "}
+                      Add Contact Number
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              Event Details
-            </div>
-            <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
-              {/* Registration URL */}
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-gray-700 text-sm font-bold"
-                  htmlFor="registrationUrl"
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  Registration URL
-                </label>
-                <input
-                  type="url"
-                  id="registrationUrl"
-                  value={formData.registrationUrl}
-                  onChange={handleInputChange}
-                  placeholder="Enter registration URL"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                Event Details
               </div>
-
-              {/* Event Dates */}
-              <div className="flex flex-col gap-2 md:flex-row md:gap-4">
-                <div className="flex flex-col gap-2 flex-grow">
+              <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
+                {/* Registration URL */}
+                <div className="flex flex-col gap-2">
                   <label
                     className="text-gray-700 text-sm font-bold"
-                    htmlFor="fromDate"
+                    htmlFor="registrationUrl"
                   >
-                    From <span className="text-red-500 ml-1">*</span>
+                    Registration URL
                   </label>
                   <input
-                    type="datetime-local"
-                    id="fromDate"
-                    value={formData.fromDate}
+                    type="url"
+                    id="registrationUrl"
+                    value={formData.registrationUrl}
                     onChange={handleInputChange}
+                    placeholder="Enter registration URL"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                   />
                 </div>
-                <div className="flex flex-col gap-2 flex-grow">
-                  <label
-                    className="text-gray-700 text-sm font-bold"
-                    htmlFor="toDate"
-                  >
-                    To <span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="toDate"
-                    value={formData.toDate}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                  />
-                </div>
-              </div>
 
-              {/* Paid Event Checkbox */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isPaidEvent"
-                  checked={formData.isPaidEvent}
-                  onChange={handleInputChange}
-                  className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
-                />
-                <label
-                  htmlFor="isPaidEvent"
-                  className="text-gray-700 font-bold"
-                >
-                  Is this a paid event?
-                </label>
-              </div>
-
-              {/* Price and Deadline */}
-              <div className="flex flex-col gap-2 md:flex-row md:gap-4">
-                {/* Conditional Price Input */}
-                {formData.isPaidEvent && (
+                {/* Event Dates */}
+                <div className="flex flex-col gap-2 md:flex-row md:gap-4">
                   <div className="flex flex-col gap-2 flex-grow">
                     <label
                       className="text-gray-700 text-sm font-bold"
-                      htmlFor="price"
+                      htmlFor="fromDate"
                     >
-                      Price <span className="text-red-500 ml-1">*</span>
+                      From <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
-                      type="number"
-                      id="price"
-                      value={formData.price}
+                      type="datetime-local"
+                      id="fromDate"
+                      value={formData.fromDate}
                       onChange={handleInputChange}
-                      placeholder="Enter price"
                       className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                     />
                   </div>
-                )}
+                  <div className="flex flex-col gap-2 flex-grow">
+                    <label
+                      className="text-gray-700 text-sm font-bold"
+                      htmlFor="toDate"
+                    >
+                      To <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="toDate"
+                      value={formData.toDate}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
 
-                <div className="flex flex-col gap-2 flex-grow">
+                {/* Paid Event Checkbox */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isPaidEvent"
+                    checked={formData.isPaidEvent}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
+                  />
+                  <label
+                    htmlFor="isPaidEvent"
+                    className="text-gray-700 font-bold"
+                  >
+                    Is this a paid event?
+                  </label>
+                </div>
+
+                {/* Price and Deadline */}
+                <div className="flex flex-col gap-2 md:flex-row md:gap-4">
+                  {/* Conditional Price Input */}
+                  {formData.isPaidEvent && (
+                    <div className="flex flex-col gap-2 flex-grow">
+                      <label
+                        className="text-gray-700 text-sm font-bold"
+                        htmlFor="price"
+                      >
+                        Price <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="Enter price"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2 flex-grow">
+                    <label
+                      className="text-gray-700 text-sm font-bold"
+                      htmlFor="participantCount"
+                    >
+                      Registration Deadline{" "}
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="deadline"
+                      value={formData.deadline}
+                      onChange={handleInputChange}
+                      placeholder="Enter  Registration Deadline  "
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Website */}
+                <div className="flex flex-col gap-2">
                   <label
                     className="text-gray-700 text-sm font-bold"
-                    htmlFor="participantCount"
+                    htmlFor="website"
                   >
-                    Registration Deadline{" "}
-                    <span className="text-red-500 ml-1">*</span>
+                    Website
                   </label>
                   <input
-                    type="datetime-local"
-                    id="deadline"
-                    value={formData.deadline}
+                    type="url"
+                    id="website"
+                    placeholder="Enter website URL"
+                    value={formData.website}
                     onChange={handleInputChange}
-                    placeholder="Enter  Registration Deadline  "
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                   />
                 </div>
               </div>
-
-              {/* Website */}
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-gray-700 text-sm font-bold"
-                  htmlFor="website"
+              <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  Website
-                </label>
-                <input
-                  type="url"
-                  id="website"
-                  placeholder="Enter website URL"
-                  value={formData.website}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+                Sub Event Details
               </div>
-            </div>
-            <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-              Sub Event Details
-            </div>
-            {/* Details Section */}
-            {formData.details.map((detail, index) => (
-              <>
-                <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
-                  <div key={index} className="flex flex-col gap-4 relative">
-                    {formData.details.length > 1 && index !== 0 && (
-                      <button
-                        type="button"
-                        onClick={() => confirmDelete(index)}
-                        className="absolute top-2 right-2 p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
-                        aria-label="Delete guideline"
-                      >
-                        <AiOutlineDelete size={20} />
-                      </button>
-                    )}
-                    <h4 className="text-gray-700 text-lg font-bold">
-                      Details (Sub Event {index + 1})
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-gray-700 text-sm font-bold">
-                        Name <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder={`Enter name for Sub Event ${index + 1}`}
-                        value={detail.name}
-                        onChange={(e) =>
-                          handleDetailFieldChange(index, "name", e.target.value)
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-gray-700 text-sm font-bold">
-                        About <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <textarea
-                        placeholder={`Enter description for Sub Event ${
-                          index + 1
-                        }`}
-                        value={detail.about}
-                        onChange={(e) =>
-                          handleDetailFieldChange(
-                            index,
-                            "about",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none resize-none"
-                      ></textarea>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-gray-700 text-sm font-bold">
-                        From <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={detail.from}
-                        onChange={(e) =>
-                          handleDetailFieldChange(index, "from", e.target.value)
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-gray-700 text-sm font-bold">
-                        To <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={detail.to}
-                        onChange={(e) =>
-                          handleDetailFieldChange(index, "to", e.target.value)
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-gray-700 text-sm font-bold">
-                        Type <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <select
-                        value={detail.type}
-                        onChange={(e) =>
-                          handleDetailFieldChange(index, "type", e.target.value)
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                      >
-                        <option value="ONLINE">ONLINE</option>
-                        <option value="OFFLINE">OFFLINE</option>
-                      </select>
-                    </div>
-                    {detail.type === "OFFLINE" && (
-                      <>
-                        <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-                          <svg
-                            className="w-6 h-6 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          Venue Details (Sub Event {index + 1})
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <label className="text-gray-700 text-sm font-bold">
-                            Venue Name
-                          </label>
-                          <input
-                            type="text"
-                            placeholder={`Enter venue name for Sub Event ${
-                              index + 1
-                            }`}
-                            value={detail.venue.name}
-                            onChange={(e) =>
-                              handleDetailFieldChange(
-                                index,
-                                "venue",
-                                e.target.value,
-                                "name"
-                              )
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <label className="text-gray-700 text-sm font-bold">
-                            Venue Map URL
-                          </label>
-                          <input
-                            type="text"
-                            placeholder={`Enter venue map URL for Sub Event ${
-                              index + 1
-                            }`}
-                            value={detail.venue.mapUrl}
-                            onChange={(e) =>
-                              handleDetailFieldChange(
-                                index,
-                                "venue",
-                                e.target.value,
-                                "mapUrl"
-                              )
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                          />
-                        </div>
-                        {detail.venue.mapUrl && (
-                          <div className="mt-4">
-                            <label className="text-gray-600 text-sm font-semibold">
-                              Map Preview:
+              {/* Details Section */}
+              {formData.details.map((detail, index) => (
+                <div key={index}>
+                  <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
+                    <div className="flex flex-col gap-4 relative">
+                      {formData.details.length > 1 && index !== 0 && (
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete(index)}
+                          className="absolute top-2 right-2 p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
+                          aria-label="Delete guideline"
+                        >
+                          <AiOutlineDelete size={20} />
+                        </button>
+                      )}
+                      <h4 className="text-gray-700 text-lg font-bold">
+                        Details (Sub Event {index + 1})
+                      </h4>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-gray-700 text-sm font-bold">
+                          Name <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={`Enter name for Sub Event ${index + 1}`}
+                          value={detail.name}
+                          onChange={(e) =>
+                            handleDetailFieldChange(
+                              index,
+                              "name",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-gray-700 text-sm font-bold">
+                          About <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <textarea
+                          placeholder={`Enter description for Sub Event ${
+                            index + 1
+                          }`}
+                          value={detail.about}
+                          onChange={(e) =>
+                            handleDetailFieldChange(
+                              index,
+                              "about",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none resize-none"
+                        ></textarea>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-gray-700 text-sm font-bold">
+                          From <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={detail.from}
+                          onChange={(e) =>
+                            handleDetailFieldChange(
+                              index,
+                              "from",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-gray-700 text-sm font-bold">
+                          To <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={detail.to}
+                          onChange={(e) =>
+                            handleDetailFieldChange(index, "to", e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-gray-700 text-sm font-bold">
+                          Type <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <select
+                          value={detail.type}
+                          onChange={(e) =>
+                            handleDetailFieldChange(
+                              index,
+                              "type",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                        >
+                          <option value="ONLINE">ONLINE</option>
+                          <option value="OFFLINE">OFFLINE</option>
+                        </select>
+                      </div>
+                      {detail.type === "OFFLINE" && (
+                        <>
+                          <div className="flex items-center gap-2 text-xl font-semibold text-gray-800">
+                            <svg
+                              className="w-6 h-6 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            Venue Details (Sub Event {index + 1})
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <label className="text-gray-700 text-sm font-bold">
+                              Venue Name
                             </label>
-                            <iframe
-                              src={detail.venue.mapUrl}
-                              title={`Map Preview for Sub Event ${index + 1}`}
-                              className="w-full h-64 border border-gray-300 rounded-lg mt-2"
-                              allowFullScreen
+                            <input
+                              type="text"
+                              placeholder={`Enter venue name for Sub Event ${
+                                index + 1
+                              }`}
+                              value={detail.venue.name}
+                              onChange={(e) =>
+                                handleDetailFieldChange(
+                                  index,
+                                  "venue",
+                                  e.target.value,
+                                  "name"
+                                )
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                             />
                           </div>
-                        )}
-                      </>
-                    )}
+                          <div className="flex flex-col gap-2">
+                            <label className="text-gray-700 text-sm font-bold">
+                              Venue Map URL
+                            </label>
+                            <input
+                              type="text"
+                              placeholder={`Enter venue map URL for Sub Event ${
+                                index + 1
+                              }`}
+                              value={detail.venue.mapUrl}
+                              onChange={(e) =>
+                                handleDetailFieldChange(
+                                  index,
+                                  "venue",
+                                  e.target.value,
+                                  "mapUrl"
+                                )
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                            />
+                          </div>
+                          {detail.venue.mapUrl && (
+                            <div className="mt-4">
+                              <label className="text-gray-600 text-sm font-semibold">
+                                Map Preview:
+                              </label>
+                              <iframe
+                                src={detail.venue.mapUrl}
+                                title={`Map Preview for Sub Event ${index + 1}`}
+                                className="w-full h-64 border border-gray-300 rounded-lg mt-2"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </>
-            ))}
+              ))}
 
-            <div
-              onClick={addSubEvent}
-              className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
-            >
-              <CiCirclePlus size={24} />
-              <span className="text-sm font-medium">Add More Sub-Event</span>
-            </div>
+              <div
+                onClick={addSubEvent}
+                className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
+              >
+                <CiCirclePlus size={24} />
+                <span className="text-sm font-medium">Add More Sub-Event</span>
+              </div>
 
-            {/* Confirmation Modal */}
-            <ConfirmationModal
-              isOpen={isModalOpen}
-              onClose={() => setModalOpen(false)}
-              onConfirm={() => {
-                if (deleteIndex !== null) {
-                  removeSubEvent(deleteIndex);
-                }
-              }}
-              message="This action cannot be undone. Do you want to proceed?"
-            />
+              {/* Confirmation Modal */}
+              <ConfirmationModal
+                isOpen={isModalOpen}
+                onClose={() => setModalOpen(false)}
+                onConfirm={() => {
+                  if (deleteIndex !== null) {
+                    removeSubEvent(deleteIndex);
+                  }
+                }}
+                message="This action cannot be undone. Do you want to proceed?"
+              />
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className={` ${
-                isSubmitting ? "bg-gray-600" : "bg-blue-500"
-              } w-full  text-white font-bold py-2.5 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-300 duration-300`}
-              disabled={isSubmitting}
-            >
-              Add Event
-            </button>
-          </form>
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className={` ${
+                  isSubmitting ? "bg-gray-600" : "bg-blue-500"
+                } w-full  text-white font-bold py-2.5 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-300 duration-300`}
+                disabled={isSubmitting}
+              >
+                {isEditing ? " Update Event" : " Add  Event"}
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 };
 
