@@ -78,21 +78,26 @@ function Home() {
                   "url('https://i0.wp.com/backgroundabstract.com/wp-content/uploads/edd/2022/01/vecteezy_abstract-blue-and-orange-wave-business-background_-e1656072952998.jpg?resize=1000%2C750&ssl=1')",
               }}
             >
-              <span className="text-slate-900 text-xl font-bold p-2  rounded-md ">
-                {userName || "Society"}
-              </span>
+              <div className="flex flex-col">
+                <span className="text-slate-900 text-4xl font-bold p-2 pb-0 rounded-md ">
+                  {userName?.toUpperCase() || "Society"}
+                </span>
+                <span className="text-slate-900 text-lg font-bold p-2 pt-0 rounded-md ">
+                  {userEmail || "Society"}
+                </span>
+              </div>
             </div>
 
-            <div className="flex flex-row items-center justify-center font-bold text-3xl">
+            {/* <div className="flex flex-row items-center justify-center font-bold text-3xl">
               Admin Panel
-            </div>
+            </div> */}
 
             {/* Business Card Section */}
 
             {/* User Email */}
-            <p className="text-slate-200 text-center text-sm">
+            {/* <p className="text-slate-200 text-center text-sm">
               {userEmail || ""}
-            </p>
+            </p> */}
             <div className="w-full mb-2 text-xl font-semibold">
               {/* <div
               onClick={() => setSelectedTab("societies")}
@@ -123,7 +128,10 @@ function Home() {
         {/* <Separator /> */}
         <div className="flex flex-row font-semibold justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
           <UserRoundPen className="text-sm" />
-          <p onClick={() => navigate("/update-profile")} className="py-1 mx-auto">
+          <p
+            onClick={() => navigate("/update-profile")}
+            className="py-1 mx-auto"
+          >
             Edit Profile
           </p>
         </div>

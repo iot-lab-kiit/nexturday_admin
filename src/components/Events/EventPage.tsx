@@ -28,16 +28,14 @@ interface Event {
   updatedAt: string;
 }
 
-interface Data {
-  data: Event[];
-}
-
 interface PaginatedEvents {
   currentPage: number;
   nextPage: number | null;
   totalItems: number;
   totalPages: number;
-  data: Data;
+  data: {
+    data: Event[]
+  };
 }
 
 interface DeleteConfirmationProps {
@@ -124,12 +122,15 @@ const EventPage = () => {
     nextPage: null,
     totalItems: 0,
     totalPages: 0,
-    data: [],
+    data: {
+      data: [],
+    },
   });
   const [loading, setLoading] = useState(true);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
   const [deleteEventName, setDeleteEventName] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentDate, setCurrentDate] = useState<number>(Date.now());
 
   useEffect(() => {
     updateMetadata({
@@ -137,6 +138,13 @@ const EventPage = () => {
       description: "Manage and view all events in Nexturday",
       keywords: "events, management, nexturday, dashboard",
     });
+
+    // Update current time every minute
+    const interval = setInterval(() => {
+      setCurrentDate(Date.now());
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -145,7 +153,7 @@ const EventPage = () => {
         setLoading(true);
         const res = await getEvents(currentPage);
         console.log(res);
-        
+
         setEvents(res);
         toast.success("Events fetched successfully");
       } catch (error) {
@@ -163,7 +171,8 @@ const EventPage = () => {
       await deleteEvent(eventId);
       setEvents((prev) => ({
         ...prev,
-        data: prev.data.filter((event) => event.id !== eventId),
+        data: {
+          data:prev.data.data.filter((event) => event.id !== eventId)},
         totalItems: prev.totalItems - 1,
       }));
       toast.success("Event deleted successfully");
@@ -179,7 +188,7 @@ const EventPage = () => {
   return (
     <div className="w-full px-4 py-8 h-full">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">EVENTS</h1>
+        <h1 className="text-5xl font-bold">EVENTS</h1>
       </div>
 
       {loading ? (
@@ -188,7 +197,7 @@ const EventPage = () => {
         </div>
       ) : events.data.data.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {events.data.data.map((event, index) => (
+          {events.data.data.map((event) => (
             <div
               key={event.id}
               className="relative h-[300px] sm:h-[350px] rounded-xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
@@ -197,12 +206,22 @@ const EventPage = () => {
               <img
                 src={event.images[0]?.url}
                 alt={event.name}
-                className="absolute w-full h-full object-cover"
+                className={`absolute w-full h-full object-cover ${
+                  currentDate > new Date(event.from).getTime()
+                    ? "grayscale"
+                    : ""
+                }`}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
               <div className="absolute inset-0 p-6 flex flex-col justify-between">
                 <div className="flex justify-between items-start">
-                  <span className="bg-blue-500/80 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+                  <span
+                    className={` text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm ${
+                      currentDate > new Date(event.from).getTime()
+                        ? "bg-gray-500"
+                        : "bg-blue-500/80"
+                    }`}
+                  >
                     {event.paid ? `₹${event.price}` : "Free"}
                   </span>
                   <div className="flex gap-2">
@@ -327,10 +346,14 @@ const EventPage = () => {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Found</h3>
-            <p className="text-gray-600 mb-6">Start by creating your first event to engage with your audience.</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No Events Found
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Start by creating your first event to engage with your audience.
+            </p>
             <button
-              onClick={() => navigate('/add-event')}
+              onClick={() => navigate("/add-event")}
               className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
             >
               <svg
@@ -352,18 +375,18 @@ const EventPage = () => {
         </div>
       )}
 
-      {events.data.length > 0 && (
+      {events.data.data.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Page {events.currentPage} of {events.totalPages} (
-            {events.totalItems} events)
+            Page {events.data.currentPage} of {events.data.totalPages} (
+            {events.data.totalItems} events)
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={events.currentPage === 1}
+              disabled={events.data.currentPage === 1}
               className={`px-4 py-2 text-sm rounded-md ${
-                events.currentPage === 1
+                events.data.currentPage === 1
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
               } border`}
@@ -372,7 +395,7 @@ const EventPage = () => {
             </button>
             <button
               onClick={() => setCurrentPage((prev) => prev + 1)}
-              disabled={!events.nextPage}
+              disabled={!events.data.nextPage}
               className={`px-4 py-2 text-sm rounded-md ${
                 !events.nextPage
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
