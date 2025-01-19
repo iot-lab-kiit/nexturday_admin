@@ -3,7 +3,7 @@ import axios from "axios";
 // Create an Axios instance
 const instance = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
-  timeout: 10000, // 10 seconds timeout
+  timeout: 100000,
 });
 
 // Add a request interceptor to set the token dynamically
