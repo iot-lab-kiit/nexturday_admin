@@ -30,7 +30,7 @@ createRoot(document.getElementById("root")!).render(
           path="/events/:id/participants"
           element={<ParticipantsTable />}
         />
-        <Route path="/events/:id/edit" element={<EditEvent />} />
+        <Route path="/events/:id/edit" element={<AddEvent isEditing={true} />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

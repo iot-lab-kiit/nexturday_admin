@@ -168,7 +168,10 @@ const EventPage = () => {
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      await deleteEvent(eventId);
+      console.log("eventId", eventId);
+      const response = await deleteEvent(eventId);
+      console.log("response", response);
+      console.log("events",events)
       setEvents((prev) => ({
         ...prev,
         data: {
