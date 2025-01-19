@@ -1311,7 +1311,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           </div>
                           <div className="flex flex-col gap-2">
                             <label className="text-gray-700 text-sm font-bold">
-                              Venue Name
+                              Venue Name <span className="text-red-500 ml-1">*</span>
                             </label>
                             <input
                               type="text"
@@ -1332,7 +1332,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           </div>
                           <div className="flex flex-col gap-2">
                             <label className="text-gray-700 text-sm font-bold">
-                              Venue Map URL
+                              Venue Map URL <span className="text-red-500 ml-1">*</span>
                             </label>
                             <input
                               type="text"
