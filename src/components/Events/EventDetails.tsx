@@ -264,7 +264,7 @@ const EventDetails = () => {
             </div>
           )}
 
-          <div className="flex justify-evenly pt-4 pb-8">
+          <div className="flex sm:flex-row justify-evenly pt-4 pb-8 flex-col gap-4 w-fit m-auto">
             <button
               onClick={() => navigate(`/events/${event.id}/participants`)}
               className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-2"

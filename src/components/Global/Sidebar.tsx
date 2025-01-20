@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => (
   <div
     className={`z-20 fixed md:static rounded-xl w-4/5 h-full md:w-1/5 bg-blue-800 text-white flex flex-col justify-between transition-transform duration-300 ${
-      sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      sidebarOpen ? "translate-x-0" : "-translate-x-full -left-3"
     } md:translate-x-0`}
   >
     <div className="w-full h-full">

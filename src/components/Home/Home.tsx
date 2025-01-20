@@ -47,7 +47,7 @@ function Home() {
   }, []);
 
   return (
-    <div className="w-full flex flex-col md:flex-row relative py-4 pl-4 h-screen">
+    <div className="w-full flex flex-col md:flex-row relative py-4 pl-4 h-svh">
       {/* Sidebar Component */}
       <Sidebar
         sidebarOpen={sidebarOpen}
@@ -68,7 +68,7 @@ function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="w-full md:w-4/5 p-4 bg-gray-50 overflow-auto">
+      <div className="w-full md:w-4/5 p-4 bg-gray-50 overflow-auto h-full">
         {selectedTab === "home" && (
           <div className="flex flex-col justify-center items-center h-full">
             <h1 className="text-3xl font-bold text-gray-700">Welcome Admin</h1>

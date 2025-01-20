@@ -13,6 +13,7 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 function Login() {
+  const helpdeskEmail="helpdesk@nexterday.com";
   const [clicked, setClicked] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -63,7 +64,10 @@ function Login() {
             <h1 className="font-bold text-3xl pb-2 leading-8">
               Login to your account
             </h1>
-            <form onSubmit={handleSubmit(handleLogin)} className="py-9 font-semibold">
+            <form
+              onSubmit={handleSubmit(handleLogin)}
+              className="py-9 font-semibold"
+            >
               <div className="flex flex-col gap-6 pb-5">
                 <div>
                   <input
@@ -114,6 +118,11 @@ function Login() {
                       {errors.password.message}
                     </p>
                   )}
+                  <p className="text-sm pt-6 font-normal text-slate-500">
+                    Forgot password? Contact{" "}
+                    <a href={`mailto:${helpdeskEmail}`} className="underline">Helpdesk</a> to
+                    retreive it.
+                  </p>
                 </div>
               </div>
               <button
