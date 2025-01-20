@@ -145,7 +145,7 @@ const EventPage = () => {
       try {
         setLoading(true);
         const res = await getEvents(currentPage);
-        console.log(res);
+        // console.log(res);
 
         setEvents(res);
         toast.success("Events fetched successfully");

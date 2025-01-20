@@ -12,7 +12,7 @@ export const fetchEvent = async (eventId: string | undefined) => {
       }
     );
 
-    console.log("response", response.data);
+    // console.log("response", response.data);
     return response.data.data;
   } catch (error) {
     console.error("Error fetching event:", error);

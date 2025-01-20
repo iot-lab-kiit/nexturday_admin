@@ -489,7 +489,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
     setIsSubmitting(true);
 
-    console.log("formData", formData);
+    // console.log("formData", formData);
     const {
       eventName,
       about,
