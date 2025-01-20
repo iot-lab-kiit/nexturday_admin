@@ -3,24 +3,22 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router-dom";
 import { loginSociety } from "@/api/authApi";
 import { updateMetadata } from "@/utils/metadata";
-
+import { useAuth } from "@/context/AuthContext";
 const schema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string(),
 });
-
 type FormData = z.infer<typeof schema>;
-
 function Login() {
   const [clicked, setClicked] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
-
+  const { login } = useAuth();
   const navigate = useNavigate();
-
+  const location = useLocation();
   const {
     register,
     handleSubmit,
@@ -28,7 +26,6 @@ function Login() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
-
   useEffect(() => {
     updateMetadata({
       title: "Login",
@@ -36,31 +33,24 @@ function Login() {
       keywords: "login, admin, nexturday, dashboard",
     });
   }, []);
-
-  const login: SubmitHandler<FormData> = async (data) => {
+  const handleLogin: SubmitHandler<FormData> = async (data) => {
     setClicked(true);
     setErrorMessage("");
-    // console.log(data);
-
     try {
       const response = await loginSociety(data);
-      // console.log(response.data);
-
       if (response.status === 201) {
-        // console.log("Login successful");
-
         const token = response.data.data.accessToken;
-        sessionStorage.setItem("societyToken", token);
+        login(token);
+        const from = (location.state as any)?.from?.pathname || "/update-profile";
+        navigate(from, { replace: true });
       } else {
         console.error("Error logging in");
         setErrorMessage("Some error occurred. Try again.");
-        setClicked(false);
       }
-
-      navigate("/update-profile");
     } catch (error) {
       console.error("Error logging in:", error);
       setErrorMessage("Some error occurred. Try again.");
+    } finally {
       setClicked(false);
     }
   };
@@ -73,7 +63,7 @@ function Login() {
             <h1 className="font-bold text-3xl pb-2 leading-8">
               Login to your account
             </h1>
-            <form onSubmit={handleSubmit(login)} className="py-9 font-semibold">
+            <form onSubmit={handleSubmit(handleLogin)} className="py-9 font-semibold">
               <div className="flex flex-col gap-6 pb-5">
                 <div>
                   <input
