@@ -278,10 +278,19 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     const newFiles = Array.from(files);
     const currentFiles = formData.selectedFiles;
 
+    if (isEditing) {
+      if (
+        formData.backendImages?.length === 1 &&
+        formData.selectedFiles.length === 0
+      ) {
+        return handleError("You can upload a maximum of 1 image");
+      }
+    }
+
     // Check file limit
     if (currentFiles.length + newFiles.length > 1) {
       handleError("You can upload a maximum of 1 image.");
-      e.target.value = ""; 
+      e.target.value = "";
       return;
     }
 
@@ -447,7 +456,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   const addSubEvent = () => {
-
     if (oneDay && formData.details.length === 1) {
       toast.error("It is a one day event");
       return;
@@ -523,7 +531,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       return handleError("Please fill in all required fields!");
     }
 
-    // Add this check in the validation section
     if (
       (!backendImages || backendImages.length === 0) &&
       (!formData.selectedFiles || formData.selectedFiles.length === 0)
@@ -531,7 +538,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       return handleError("Please upload at least one image!");
     }
 
-    if (formData.selectedFiles.length > 1) {
+    if (!isEditing && formData.selectedFiles.length > 1) {
       return handleError("You can upload a maximum of 1 image");
     }
 
@@ -1175,7 +1182,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       className="text-gray-700 text-sm font-bold"
                       htmlFor="registrationUrl"
                     >
-                      Registration URL <span className="text-red-500 ml-1">*</span>
+                      Registration URL{" "}
+                      <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       type="url"
