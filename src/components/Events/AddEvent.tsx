@@ -152,7 +152,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setloading] = useState(false);
-
+  const [oneDay, setOneDay] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -178,6 +178,28 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       fetchEventById(id);
     }
   }, [isEditing, id]);
+
+  const handleOneDayEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOneDay(e.target.checked);
+    if (e.target.checked) {
+      setFormData((prev) => ({
+        ...prev,
+        details: [
+          {
+            name: prev.eventName,
+            about: prev.about,
+            from: prev.fromDate,
+            to: prev.toDate,
+            type: "ONLINE",
+            venue: {
+              name: "",
+              mapUrl: "",
+            },
+          },
+        ],
+      }));
+    }
+  };
 
   const transformApiResponseToFormData = async (
     apiData: ApiResponse
@@ -258,7 +280,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
     // Check file limit
     if (currentFiles.length + newFiles.length > 5) {
-      handleError("You can upload a maximum of 5 images.");
+      handleError("You can upload a maximum of 1 image.");
       e.target.value = ""; // Reset input
       return;
     }
@@ -504,8 +526,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       return handleError("Please upload at least one image!");
     }
 
-    if (formData.selectedFiles.length > 5) {
-      return handleError("You can upload a maximum of 5 images.");
+    if (formData.selectedFiles.length > 1) {
+      return handleError("You can upload a maximum of 1 image");
     }
 
     // Convert dates to ISO format
@@ -545,10 +567,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       );
     }
 
-    if(details.length === 0){
-      return handleError(
-        `Details should not be empty`
-      );
+    if (details.length === 0) {
+      return handleError(`Details should not be empty`);
     }
 
     for (const [index, detail] of details.entries()) {
@@ -785,7 +805,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       <span>Upload Images</span>
                     </button>
                     <span className="text-gray-500 text-sm">
-                      (You can upload up to 5 images)
+                      (You can upload a maximum of 1 image of ideally 1X1
+                      ratio.)
                     </span>
                   </div>
                   <input
@@ -1037,24 +1058,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 Event Details
               </div>
               <div className="bg-gray-100 w-full flex flex-col justify-center gap-3 p-6 rounded-md">
-                {/* Registration URL */}
-                <div className="flex flex-col gap-2">
-                  <label
-                    className="text-gray-700 text-sm font-bold"
-                    htmlFor="registrationUrl"
-                  >
-                    Registration URL
-                  </label>
-                  <input
-                    type="url"
-                    id="registrationUrl"
-                    value={formData.registrationUrl}
-                    onChange={handleInputChange}
-                    placeholder="Enter registration URL"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                  />
-                </div>
-
                 {/* Event Dates */}
                 <div className="flex flex-col gap-2 md:flex-row md:gap-4">
                   <div className="flex flex-col gap-2 flex-grow">
@@ -1146,6 +1149,24 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                     />
                   </div>
                 </div>
+                {formData.isPaidEvent && (
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-gray-700 text-sm font-bold"
+                      htmlFor="registrationUrl"
+                    >
+                      Registration URL
+                    </label>
+                    <input
+                      type="url"
+                      id="registrationUrl"
+                      value={formData.registrationUrl}
+                      onChange={handleInputChange}
+                      placeholder="Enter registration URL"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                    />
+                  </div>
+                )}
 
                 {/* Website */}
                 <div className="flex flex-col gap-2">
@@ -1180,6 +1201,18 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   />
                 </svg>
                 Sub Event Details
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isoneday"
+                  checked={oneDay}
+                  onChange={(e) => handleOneDayEvent(e)}
+                  className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
+                />
+                <label htmlFor="isOneDay" className="text-gray-700 font-bold">
+                  Is this one day event?
+                </label>
               </div>
               {/* Details Section */}
               {formData.details.map((detail, index) => (
@@ -1311,7 +1344,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           </div>
                           <div className="flex flex-col gap-2">
                             <label className="text-gray-700 text-sm font-bold">
-                              Venue Name <span className="text-red-500 ml-1">*</span>
+                              Venue Name{" "}
+                              <span className="text-red-500 ml-1">*</span>
                             </label>
                             <input
                               type="text"
@@ -1332,7 +1366,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           </div>
                           <div className="flex flex-col gap-2">
                             <label className="text-gray-700 text-sm font-bold">
-                              Venue Map URL <span className="text-red-500 ml-1">*</span>
+                              Venue Map URL{" "}
+                              <span className="text-red-500 ml-1">*</span>
                             </label>
                             <input
                               type="text"

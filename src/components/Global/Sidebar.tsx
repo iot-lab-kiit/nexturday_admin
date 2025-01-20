@@ -2,6 +2,7 @@ import { MdEventAvailable } from "react-icons/md";
 import { RiShutDownLine } from "react-icons/ri";
 import { FaPlus } from "react-icons/fa6";
 import { UserRoundPen, X } from "lucide-react";
+// import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   sidebarOpen: boolean;

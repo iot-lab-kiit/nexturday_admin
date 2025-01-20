@@ -126,33 +126,32 @@ const EditEvent = () => {
 
     setSubmitting(true);
     try {
-      const formData = {
-        name: data.name,
-        about: data.about,
-        websiteUrl: data.websiteUrl,
-        emails: data.emails.split(',').map(email => email.trim()),
-        guidlines: data.guidlines.split('\n').filter(line => line.trim()),
-        phoneNumbers: data.phoneNumbers.split(',').map(phone => phone.trim()),
-        registrationUrl: data.registrationUrl,
-        price: data.paid ? data.price : 0,
-        from: formatDateForAPI(data.from),
-        to: formatDateForAPI(data.to),
-        paid: data.paid,
-        details: [
-          {
-            name: data.subEventName,
-            about: data.subEventAbout,
-            from: formatDateForAPI(data.subEventFrom),
-            to: formatDateForAPI(data.subEventTo),
-            type: data.type,
-            venue: {
-              mapUrl: data.venue.mapUrl,
-              name: data.venue.name
-            }
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("about", data.about);
+      formData.append("websiteUrl", data.websiteUrl);
+      formData.append("emails", JSON.stringify(data.emails.split(',').map(email => email.trim())));
+      formData.append("guidlines", JSON.stringify(data.guidlines.split('\n').filter(line => line.trim())));
+      formData.append("phoneNumbers", JSON.stringify(data.phoneNumbers.split(',').map(phone => phone.trim())));
+      formData.append("registrationUrl", data.registrationUrl);
+      formData.append("price", data.paid ? data.price.toString() : "0");
+      formData.append("from", formatDateForAPI(data.from));
+      formData.append("to", formatDateForAPI(data.to));
+      formData.append("paid", data.paid.toString());
+      formData.append("details", JSON.stringify([
+        {
+          name: data.subEventName,
+          about: data.subEventAbout,
+          from: formatDateForAPI(data.subEventFrom),
+          to: formatDateForAPI(data.subEventTo),
+          type: data.type,
+          venue: {
+            mapUrl: data.venue.mapUrl,
+            name: data.venue.name
           }
-        ],
-        imagesKeys: [] 
-      };
+        }
+      ]));
+      formData.append("imagesKeys", JSON.stringify([]));
       
       await updateEvent(id, formData);
       toast.success("Event updated successfully");
@@ -165,8 +164,7 @@ const EditEvent = () => {
     }
   };
 
-  const onError = (errors: any) => {
-    // console.log("Form Errors:", errors);
+  const onError = () => {  
     toast.error("Please fix all form errors before submitting");
     throw(errors)
   };
