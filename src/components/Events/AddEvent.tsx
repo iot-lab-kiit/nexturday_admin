@@ -677,9 +677,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
     try {
       if (isEditing) {
-        const response = await updateEvent(id, formDataToSend);
+        await updateEvent(id, formDataToSend);
       } else {
-        const response = await CreateEvent(formDataToSend);
+        await CreateEvent(formDataToSend);
       }
 
       toast.dismiss(toastId);

@@ -10,7 +10,6 @@ import AddEvent from "./components/Events/AddEvent.tsx";
 import EventPage from "./components/Events/EventPage.tsx";
 import EventDetails from "./components/Events/EventDetails.tsx";
 import ParticipantsTable from "./components/Participants/ParticipantsTable.tsx";
-import EditEvent from "./components/Events/EditEvent.tsx";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/Global/ProtectedRoute.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
