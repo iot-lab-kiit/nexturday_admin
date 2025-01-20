@@ -177,7 +177,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
       fetchEventById(id);
     }
-  }, [isEditing, id]);
+  }, [id, isEditing]);
 
   const handleOneDayEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOneDay(e.target.checked);
@@ -833,7 +833,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   />
 
                   {/* Display Backend Images */}
-                  {formData?.backendImages && formData.backendImages.length && (
+                  {formData?.backendImages && formData.backendImages.length > 0 && (
                     <div className="mt-4">
                       <p className="text-gray-700 text-sm font-semibold">
                         Existing Images:
@@ -871,7 +871,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       </p>
                       <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                         {formData.selectedFiles.map((file, index) => {
-                          const previewUrl = URL.createObjectURL(file); // Generate preview dynamically
+                          const previewUrl = URL.createObjectURL(file);
                           return (
                             <div
                               key={index}
@@ -885,7 +885,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  handleRemoveImage(index, false); // Remove uploaded image
+                                  handleRemoveImage(index, false);
                                   URL.revokeObjectURL(previewUrl); // Revoke URL to free memory
                                 }}
                                 className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
