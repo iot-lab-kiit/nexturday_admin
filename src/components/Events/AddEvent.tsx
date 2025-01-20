@@ -545,12 +545,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       );
     }
 
-    if(details.length === 0){
-      return handleError(
-        `Details should not be empty`
-      );
-    }
-
     for (const [index, detail] of details.entries()) {
       if (!detail.name.trim() || !detail.about.trim()) {
         return handleError(
@@ -581,6 +575,20 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
             index + 1
           }'s dates must be within the range of the main event dates!`
         );
+      }
+
+      if (detail.type === "OFFLINE") {
+        if (
+          !detail.venue ||
+          !detail.venue.name.trim() ||
+          !detail.venue.mapUrl.trim()
+        ) {
+          return handleError(
+            `Sub Event ${
+              index + 1
+            } is marked as OFFLINE but does not have complete venue details!`
+          );
+        }
       }
 
       for (let otherIndex = 0; otherIndex < details.length; otherIndex++) {
@@ -677,9 +685,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
     try {
       if (isEditing) {
-        const response = await updateEvent(id, formDataToSend);
+        await updateEvent(id, formDataToSend);
       } else {
-        const response = await CreateEvent(formDataToSend);
+        await CreateEvent(formDataToSend);
       }
 
       toast.dismiss(toastId);
@@ -687,7 +695,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         isEditing ? "Event Updated successfully!" : "Event Added successfully!"
       );
 
-      // navigate("/admin-dashboard");
+      navigate("/admin-dashboard");
 
       // console.log("Response:", response);
     } catch (error) {
@@ -1332,7 +1340,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           </div>
                           <div className="flex flex-col gap-2">
                             <label className="text-gray-700 text-sm font-bold">
-                              Venue Map URL
+                              Venue Embedded Map URL
                             </label>
                             <input
                               type="text"
