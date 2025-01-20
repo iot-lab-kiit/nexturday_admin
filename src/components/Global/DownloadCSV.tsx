@@ -1,7 +1,7 @@
 
 
 const DownloadCSV = ({ data, fileName }) => {
-  const convertToCSV = (objArray) => {
+  const convertToCSV = (objArray : any) => {
     const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
     let str = '';
 

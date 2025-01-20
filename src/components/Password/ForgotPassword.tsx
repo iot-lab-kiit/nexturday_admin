@@ -3,7 +3,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { signup, signin } from "../lib/auth";
+// import { signup, signin } from "../lib/auth";
 import axios from "axios";
 
 const schema = z.object({
@@ -30,7 +30,7 @@ function ForgotPassword() {
       email: data.email,
     };
     try {
-      const response = await axios.patch(`${baseUrl}/api/society`, res);
+      await axios.patch(`${baseUrl}/api/society`, res);
       // if(response)
     } catch (error) {
       console.log(error);

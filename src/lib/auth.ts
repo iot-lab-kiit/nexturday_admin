@@ -4,7 +4,7 @@ import { FirebaseError } from "firebase/app";
 
 export const signup = async (email: string, password: string): Promise<void> => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+   await createUserWithEmailAndPassword(auth, email, password);
     // console.log("User signed up:", userCredential.user);
   } catch (error) {
     if (error instanceof FirebaseError) {
@@ -17,7 +17,7 @@ export const signup = async (email: string, password: string): Promise<void> => 
 
 export const signin = async (email: string, password: string): Promise<void> => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(auth, email, password);
     // console.log("User signed in:", userCredential.user);
   } catch (error) {
     if (error instanceof FirebaseError) {
