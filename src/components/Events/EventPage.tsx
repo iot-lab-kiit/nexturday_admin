@@ -5,7 +5,6 @@ import { deleteEvent, getEvents } from "@/api/event";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import { updateMetadata } from "@/utils/metadata";
-
 interface Event {
   id: string;
   about: string;
@@ -28,14 +27,16 @@ interface Event {
   updatedAt: string;
 }
 
-interface PaginatedEvents {
+interface PaginatedResponse {
   currentPage: number;
-  nextPage: number | null;
+  nextPage: boolean;
   totalItems: number;
   totalPages: number;
-  data: {
-    data: Event[]
-  };
+  data: Event[];
+}
+
+interface EventsResponse {
+  data: PaginatedResponse;
 }
 
 interface DeleteConfirmationProps {
@@ -117,15 +118,7 @@ const DeleteConfirmation = ({
 
 const EventPage = () => {
   const navigate = useNavigate();
-  const [events, setEvents] = useState<PaginatedEvents>({
-    currentPage: 1,
-    nextPage: null,
-    totalItems: 0,
-    totalPages: 0,
-    data: {
-      data: [],
-    },
-  });
+  const [events, setEvents] = useState<EventsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
   const [deleteEventName, setDeleteEventName] = useState<string>("");
@@ -168,16 +161,18 @@ const EventPage = () => {
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      console.log("eventId", eventId);
-      const response = await deleteEvent(eventId);
-      console.log("response", response);
-      console.log("events",events)
-      setEvents((prev) => ({
-        ...prev,
-        data: {
-          data:prev.data.data.filter((event) => event.id !== eventId)},
-        totalItems: prev.totalItems - 1,
-      }));
+      await deleteEvent(eventId);
+      setEvents((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          data: {
+            ...prev.data,
+            data: prev.data.data.filter((event) => event.id !== eventId),
+            totalItems: prev.data.totalItems - 1
+          }
+        };
+      });
       toast.success("Event deleted successfully");
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -186,6 +181,11 @@ const EventPage = () => {
       setDeleteEventId(null);
       setDeleteEventName("");
     }
+  };
+
+  const handlePageChange = async (newPage: number) => {
+    if (newPage < 1 || (events && newPage > events.data.totalPages)) return;
+    setCurrentPage(newPage);
   };
 
   return (
@@ -198,7 +198,7 @@ const EventPage = () => {
         <div className="text-center text-lg font-medium my-5">
           <LoadingSpinner />
         </div>
-      ) : events.data.data.length > 0 ? (
+      ) : events && events.data.data.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {events.data.data.map((event) => (
             <div
@@ -332,53 +332,12 @@ const EventPage = () => {
           ))}
         </div>
       ) : (
-        <div className="flex justify-center items-center h-[calc(100vh-200px)]">
-          <div className="text-center bg-white p-8 rounded-xl shadow-sm border max-w-md w-full">
-            <div className="mb-4">
-              <svg
-                className="w-16 h-16 mx-auto text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.5"
-                  d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H14"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No Events Found
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Start by creating your first event to engage with your audience.
-            </p>
-            <button
-              onClick={() => navigate("/add-event")}
-              className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Add Your First Event
-            </button>
-          </div>
+        <div className="text-center py-10">
+          <p className="text-gray-500">No events found</p>
         </div>
       )}
 
-      {events.data.data.length > 0 && (
+      {events && events.data.data.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-gray-700">
             Page {events.data.currentPage} of {events.data.totalPages} (
@@ -386,24 +345,24 @@ const EventPage = () => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => handlePageChange(events.data.currentPage - 1)}
               disabled={events.data.currentPage === 1}
               className={`px-4 py-2 text-sm rounded-md ${
                 events.data.currentPage === 1
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
-              } border`}
+              }`}
             >
               Previous
             </button>
             <button
-              onClick={() => setCurrentPage((prev) => prev + 1)}
+              onClick={() => handlePageChange(events.data.currentPage + 1)}
               disabled={!events.data.nextPage}
               className={`px-4 py-2 text-sm rounded-md ${
-                !events.nextPage
+                !events.data.nextPage
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
-              } border`}
+              }`}
             >
               Next
             </button>

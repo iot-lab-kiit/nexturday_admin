@@ -256,7 +256,8 @@ const EventDetails = () => {
                     <strong>Type:</strong> {subEvent.type}
                   </p>
                   <p>
-                    <strong>Venue:</strong> {subEvent.venue}
+                    <strong>Venue:</strong>{" "}
+                    {subEvent.type == "ONLINE" ? "ONLINE" : subEvent.venue}
                   </p>
                 </div>
               ))}

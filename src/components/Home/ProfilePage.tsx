@@ -23,7 +23,7 @@ type FormData = z.infer<typeof schema>;
 const ProfilePage = () => {
   const [clicked, setClicked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [societyDetails, setSocietyDetails] = useState<FormData>();
+  // const [societyDetails, setSocietyDetails] = useState<FormData>();
   const [email, setEmail] = useState("");
 
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ const ProfilePage = () => {
     setLoading(true);
     try {
       const response = await getSocietyProfile();
-      setSocietyDetails(response.data.data);
+      // setSocietyDetails(response.data.data);
       setValue("name", response.data.data.name);
       setEmail(response.data.data.email);
       setValue("password", response.data.data.password);
