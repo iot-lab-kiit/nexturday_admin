@@ -166,6 +166,7 @@ const EditEvent = () => {
 
   const onError = () => {  
     toast.error("Please fix all form errors before submitting");
+    throw(errors)
   };
 
   if (loading) {
