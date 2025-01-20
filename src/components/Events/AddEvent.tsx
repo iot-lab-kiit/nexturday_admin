@@ -279,9 +279,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     const currentFiles = formData.selectedFiles;
 
     // Check file limit
-    if (currentFiles.length + newFiles.length > 5) {
+    if (currentFiles.length + newFiles.length > 1) {
       handleError("You can upload a maximum of 1 image.");
-      e.target.value = ""; // Reset input
+      e.target.value = ""; 
       return;
     }
 
@@ -447,6 +447,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   const addSubEvent = () => {
+
+    if (oneDay && formData.details.length === 1) {
+      toast.error("It is a one day event");
+      return;
+    }
     setFormData((prevState) => ({
       ...prevState,
       details: [
@@ -833,35 +838,36 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   />
 
                   {/* Display Backend Images */}
-                  {formData?.backendImages && formData.backendImages.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-gray-700 text-sm font-semibold">
-                        Existing Images:
-                      </p>
-                      <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                        {formData.backendImages?.map((image, index) => (
-                          <div
-                            key={image.key}
-                            className="relative border rounded-lg overflow-hidden group"
-                          >
-                            <img
-                              src={image.url}
-                              alt={`Backend Image ${index + 1}`}
-                              className="w-full h-32 object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(index, true)}
-                              className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
-                              aria-label="Remove backend image"
+                  {formData?.backendImages &&
+                    formData.backendImages.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-gray-700 text-sm font-semibold">
+                          Existing Images:
+                        </p>
+                        <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                          {formData.backendImages?.map((image, index) => (
+                            <div
+                              key={image.key}
+                              className="relative border rounded-lg overflow-hidden group"
                             >
-                              <MdDelete size={18} />
-                            </button>
-                          </div>
-                        ))}
+                              <img
+                                src={image.url}
+                                alt={`Backend Image ${index + 1}`}
+                                className="w-full h-32 object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(index, true)}
+                                className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                                aria-label="Remove backend image"
+                              >
+                                <MdDelete size={18} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Display Newly Uploaded Images */}
                   {formData.selectedFiles.length > 0 && (
@@ -1169,7 +1175,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       className="text-gray-700 text-sm font-bold"
                       htmlFor="registrationUrl"
                     >
-                      Registration URL
+                      Registration URL <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       type="url"
