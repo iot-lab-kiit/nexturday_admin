@@ -165,7 +165,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
           const transformedData = await transformApiResponseToFormData(
             response
           );
+          const fromDate = new Date(transformedData.fromDate)
+            .toISOString()
+            .split("T")[0];
+          const toDate = new Date(transformedData.toDate)
+            .toISOString()
+            .split("T")[0];
 
+          setOneDay(toDate === fromDate);
           setFormData(transformedData);
         } catch (error) {
           console.error("Error fetching event data:", error);
@@ -281,7 +288,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     // Check file limit
     if (currentFiles.length + newFiles.length > 1) {
       handleError("You can upload a maximum of 1 image.");
-      e.target.value = ""; 
+      e.target.value = "";
       return;
     }
 
@@ -447,7 +454,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   const addSubEvent = () => {
-
     if (oneDay && formData.details.length === 1) {
       toast.error("It is a one day event");
       return;
@@ -1175,7 +1181,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       className="text-gray-700 text-sm font-bold"
                       htmlFor="registrationUrl"
                     >
-                      Registration URL <span className="text-red-500 ml-1">*</span>
+                      Registration URL{" "}
+                      <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       type="url"
@@ -1250,7 +1257,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                         </button>
                       )}
                       <h4 className="text-gray-700 text-lg font-bold">
-                        Details (Sub Event {index + 1})
+                        Details {!oneDay && <span>(Sub Event {index + 1})</span>}
                       </h4>
                       <div className="flex flex-col gap-2">
                         <label className="text-gray-700 text-sm font-bold">
@@ -1386,7 +1393,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           </div>
                           <div className="flex flex-col gap-2">
                             <label className="text-gray-700 text-sm font-bold">
-                              Venue Map URL{" "}
+                              Embedded Venue Map URL{" "}
                               <span className="text-red-500 ml-1">*</span>
                             </label>
                             <input
