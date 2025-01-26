@@ -12,76 +12,19 @@ import { fetchEvent, updateEvent } from "@/api/editEventApi";
 import LoadingSpinner from "../Global/LoadingSpinner";
 // import Sidebar from "../Global/Sidebar";
 
-type EventType = "ONLINE" | "OFFLINE";
+// import types
+import {
+  EventType,
+  VenueType,
+  DetailType,
+  FormDataType,
+  ApiResponse,
+  ConfirmationModalProps,
+  AddEventProps,
+} from "../../types";
 
-interface VenueType {
-  name: string;
-  mapUrl: string;
-}
+const availableTags = ["Tech", "Cultural", "Fun", "Workshop", "Hackathon"];
 
-interface DetailType {
-  name: string;
-  about: string;
-  from: string;
-  to: string;
-  type: EventType;
-  venue: VenueType;
-}
-
-interface BackendImage {
-  url: string;
-  key: string;
-}
-
-interface FormDataType {
-  eventName: string;
-  about: string;
-  guidelines: string[];
-  eventType: EventType;
-  fromDate: string;
-  toDate: string;
-  website?: string;
-  emails: string[];
-  contactNumbers: string[];
-  registrationUrl?: string;
-  isPaidEvent: boolean;
-  price?: number;
-  deadline: string;
-  selectedFiles: File[];
-  backendImages?: BackendImage[];
-  imagesKeys?: string[];
-  details: DetailType[];
-}
-
-type ApiResponse = {
-  name?: string;
-  about?: string;
-  guidlines?: string[];
-  type?: EventType;
-  from?: string;
-  to?: string;
-  websiteUrl?: string;
-  emails?: string[];
-  phoneNumbers?: string[];
-  registrationUrl?: string;
-  paid?: boolean;
-  price?: number;
-  deadline?: string;
-  images?: BackendImage[];
-  details?: DetailType[];
-};
-
-interface ConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  message: string;
-}
-
-interface AddEventProps {
-  isEditing?: boolean;
-  // eventID?: string;
-}
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
   onClose,
@@ -121,16 +64,20 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     about: "",
     guidelines: [""],
     eventType: "ONLINE",
+    eventTags: "",
     fromDate: "",
     toDate: "",
     website: "",
     emails: [""],
+    teamSize: 1,
+    isOutsideParticipantsAllowed: false,
     contactNumbers: [""],
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
     deadline: "",
     selectedFiles: [],
+    selectedDocs: [],
     backendImages: [],
     imagesKeys: [],
     details: [
@@ -220,12 +167,17 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       toDate: formatDateForInput(apiData.to || ""),
       website: apiData.websiteUrl || "",
       emails: apiData.emails || [""],
+      teamSize: apiData.teamSize || 1,
+      isOutsideParticipantsAllowed:
+        apiData.isOutsideParticipantsAllowed || false,
+      eventTags: apiData.eventTags || "",
       contactNumbers: apiData.phoneNumbers || [""],
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
       price: apiData.price || 0,
       deadline: formatDateForInput(apiData.deadline || ""),
       selectedFiles: [],
+      selectedDocs: [],
       backendImages: apiData.images || [],
       details:
         apiData.details?.map((subEvent: DetailType) => ({
@@ -322,6 +274,61 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     }
   };
 
+  //For document upload
+  const handleDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    const currentFiles = formData.selectedDocs;
+
+    // Check file limit
+    if (currentFiles.length + newFiles.length > 1) {
+      handleError("You can upload a maximum of 1 pdf.");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      const compressedFiles = await Promise.all(
+        newFiles.map(async (file) => {
+          try {
+            if (file.type === "application/pdf") {
+              const fileSizeInMB = file.size / (1024 * 1024);
+              if (fileSizeInMB > 10) {
+                handleError(
+                  `${file.name} exceeds 10 MB and won't be processed.`
+                );
+                return null; // Skip large files
+              }
+              return file; // Return PDF file without compression
+            } else {
+              handleError(`${file.name} is not a PDF file.`);
+              return;
+            }
+          } catch (error) {
+            console.error("Processing failed for file:", file.name, error);
+            return file;
+          }
+        })
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        selectedDocs: currentFiles.concat(
+          compressedFiles.filter(
+            (file): file is File => file !== null && file !== undefined
+          )
+        ),
+      }));
+    } catch (error) {
+      console.error("Error during file processing:", error);
+      handleError("Failed to process the selected files.");
+    } finally {
+      e.target.value = ""; // Reset input value
+    }
+  };
+
   const handleRemoveImage = (index: number, isBackend: boolean) => {
     if (isBackend) {
       setFormData((prev) => {
@@ -343,6 +350,29 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         return {
           ...prev,
           selectedFiles: updatedFiles,
+        };
+      });
+    }
+  };
+
+  //Remove document
+  const handleRemoveDoc = (index: number) => {
+    if (index === 0) {
+      setFormData((prev) => {
+        const updatedDocs = [...prev.selectedDocs];
+        updatedDocs.splice(index, 1);
+        return {
+          ...prev,
+          selectedDocs: updatedDocs,
+        };
+      });
+    } else {
+      setFormData((prev) => {
+        const updatedFiles = [...prev.selectedDocs];
+        updatedFiles.splice(index, 1);
+        return {
+          ...prev,
+          selectedDocs: updatedFiles,
         };
       });
     }
@@ -541,6 +571,15 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       return handleError("You can upload a maximum of 1 image");
     }
 
+    //add this to check docs validation
+    if (!formData.selectedDocs || formData.selectedDocs.length === 0) {
+      return handleError("Please upload at least one Document!");
+    }
+
+    if (formData.selectedDocs.length > 1) {
+      return handleError("You can upload a maximum of 1 Document");
+    }
+
     // Convert dates to ISO format
     const fromISO = new Date(formData.fromDate).toISOString();
     const toISO = new Date(formData.toDate).toISOString();
@@ -709,6 +748,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     formDataToSend.append("details", JSON.stringify(formattedDetails));
     formData.selectedFiles.forEach((file) => {
       formDataToSend.append("images", file);
+    });
+    formData.selectedDocs.forEach((file) => {
+      formDataToSend.append("pdf", file);
     });
 
     if (isEditing && imagesKeys && imagesKeys.length > 0) {
@@ -1031,36 +1073,61 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   <label className="text-gray-700 text-sm font-bold">
                     Contact Numbers <span className="text-red-500 ml-1">*</span>
                   </label>
-                  {formData.contactNumbers.map((contact, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={contact}
-                        onChange={(e) =>
-                          handleContactNumberChange(index, e.target.value)
-                        }
-                        placeholder={`Contact Number ${index + 1}`}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                      />
-                      {index > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveContactNumber(index)}
-                          className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
-                          aria-label="Delete guideline"
-                        >
-                          <AiOutlineDelete size={20} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {formData.contactNumbers.map((contact, index) => {
+                    // Split the contact string into countryCode and number parts
+                    const [countryCode, number] = contact.split("-");
+
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        {/* Country Code Input */}
+                        <input
+                          type="number"
+                          value={countryCode || ""}
+                          onChange={(e) => {
+                            const updatedContact = `${e.target.value}-${
+                              number || ""
+                            }`;
+                            handleContactNumberChange(index, updatedContact);
+                          }}
+                          placeholder="+91"
+                          className="w-20 border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                        />
+
+                        {/* Contact Number Input */}
+                        <input
+                          type="number"
+                          value={number || ""}
+                          onChange={(e) => {
+                            const updatedContact = `${countryCode || ""}-${
+                              e.target.value
+                            }`;
+                            handleContactNumberChange(index, updatedContact);
+                          }}
+                          placeholder={`Contact Number ${index + 1}`}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                        />
+
+                        {/* Delete Button */}
+                        {index > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveContactNumber(index)}
+                            className="p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200"
+                            aria-label="Delete Contact Number"
+                          >
+                            <AiOutlineDelete size={20} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {/* Add Contact Number Button */}
                   <div
                     onClick={handleAddContactNumber}
                     className="inline-flex items-center gap-1.5 text-blue-500 hover:text-violet-400 cursor-pointer transition-all duration-300 ease-in-out"
                   >
                     <CiCirclePlus size={24} />
                     <span className="text-sm font-medium">
-                      {" "}
                       Add Contact Number
                     </span>
                   </div>
@@ -1116,6 +1183,24 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                     />
                   </div>
+                </div>
+
+                {/* Check for team size */}
+                <div className="flex flex-col gap-2">
+                  <label
+                    className="text-gray-700 text-sm font-bold"
+                    htmlFor="teamSize"
+                  >
+                    Team Size <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="teamSize"
+                    value={formData.teamSize}
+                    onChange={handleInputChange}
+                    placeholder="Enter team size"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                  />
                 </div>
 
                 {/* Paid Event Checkbox */}
@@ -1195,6 +1280,49 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   </div>
                 )}
 
+                {/* Check for outside participants */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isOutsideParticipantsAllowed"
+                    checked={formData.isOutsideParticipantsAllowed}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
+                  />
+                  <label
+                    htmlFor="isOutsideParticipantsAllowed"
+                    className="text-gray-700 font-bold"
+                  >
+                    Is outside participants allowed?
+                  </label>
+                </div>
+
+                {/* Event tags */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-gray-700 text-sm font-bold">
+                    Event Tags
+                  </label>
+
+                  {/* Select dropdown for event tags */}
+                  <select
+                    value={formData.eventTags}
+                    onChange={(e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        eventTags: e.target.value,
+                      }));
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                  >
+                    <option value="">Select an event tag</option>{" "}
+                    {availableTags.map((tag) => (
+                      <option key={tag} value={tag}>
+                        {tag}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Website */}
                 <div className="flex flex-col gap-2">
                   <label
@@ -1257,7 +1385,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                         </button>
                       )}
                       <h4 className="text-gray-700 text-lg font-bold">
-                        Details {!oneDay && <span>(Sub Event {index + 1})</span>}
+                        Details{" "}
+                        {!oneDay && <span>(Sub Event {index + 1})</span>}
                       </h4>
                       <div className="flex flex-col gap-2">
                         <label className="text-gray-700 text-sm font-bold">
@@ -1440,6 +1569,61 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 <CiCirclePlus size={24} />
                 <span className="text-sm font-medium">Add More Sub-Event</span>
               </div>
+
+              {/* Add No Objection Document */}
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    document.getElementById("nocDocument")?.click()
+                  }
+                  className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
+                >
+                  <MdOutlineFileUpload size={20} /> <span>Upload Document</span>
+                </button>
+                <span className="text-gray-500 text-sm">
+                  (Upload No Objection Document.)
+                </span>
+              </div>
+
+              <input
+                type="file"
+                id="nocDocument"
+                accept=".pdf"
+                className="hidden"
+                multiple
+                onChange={(e) => handleDocChange(e)}
+              />
+
+              {formData.selectedDocs.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-gray-700 text-sm font-semibold">
+                    Newly Uploaded Files:
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {formData.selectedDocs.map((file, index) => {
+                      return (
+                        <div
+                          key={index}
+                          className="relative border rounded-lg p-4 bg-gray-50 hover:shadow-lg transition-all duration-200"
+                        >
+                          <p className="text-sm text-gray-800 font-medium truncate">
+                            {file.name}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDoc(index)}
+                            className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                            aria-label="Remove uploaded file"
+                          >
+                            <MdDelete size={18} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Confirmation Modal */}
               <ConfirmationModal
