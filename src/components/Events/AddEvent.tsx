@@ -813,7 +813,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
               Back
             </button>
 
-            <h1 className="text-3xl font-bold text-white">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white">
               {isEditing ? " Update Your Event" : " Add New Event"}
             </h1>
           </div>
