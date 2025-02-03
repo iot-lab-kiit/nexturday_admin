@@ -9,3 +9,4 @@ services:
       - "18322:5173"
     env_file:
       - .env
+    restart: unless-stopped
