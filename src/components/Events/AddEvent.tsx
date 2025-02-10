@@ -572,9 +572,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     }
 
     //add this to check docs validation
-    if (!formData.selectedDocs || formData.selectedDocs.length === 0) {
-      return handleError("Please upload at least one Document!");
-    }
+    // if (!formData.selectedDocs || formData.selectedDocs.length === 0) {
+    //   return handleError("Please upload at least one Document!");
+    // }
 
     if (formData.selectedDocs.length > 1) {
       return handleError("You can upload a maximum of 1 Document");
@@ -607,7 +607,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       return handleError(`Invalid email(s): ${invalidEmails.join(", ")}`);
     }
 
-    const phoneRegex = /^\d{10}$/;
+    // const phoneRegex = /^\d{10}$/;
+    const phoneRegex = /^\+?\d{1,3}[- ]?\d{10}$/;
     const invalidNumbers = contactNumbers.filter(
       (number) => !phoneRegex.test(number.trim())
     );
@@ -723,6 +724,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       "deadline",
       new Date(formData.deadline).toISOString()
     );
+
+    //add tags using 
+    formDataToSend.append("tags[0]", "tech");
 
     const validEmails = formData.emails.filter((email) => email.trim());
     const validGuidelines = formData.guidelines.filter((g) => g.trim());
@@ -1571,7 +1575,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
               </div>
 
               {/* Add No Objection Document */}
-              <div className="flex items-center gap-4">
+              {/* <div className="flex items-center gap-4">
                 <button
                   type="button"
                   onClick={() =>
@@ -1584,7 +1588,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 <span className="text-gray-500 text-sm">
                   (Upload No Objection Document.)
                 </span>
-              </div>
+              </div> */}
 
               <input
                 type="file"
