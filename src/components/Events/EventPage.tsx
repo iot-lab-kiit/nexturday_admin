@@ -132,7 +132,6 @@ const EventPage = () => {
       keywords: "events, management, nexturday, dashboard",
     });
 
-    // Update current time every minute
     const interval = setInterval(() => {
       setCurrentDate(Date.now());
     }, 60000);

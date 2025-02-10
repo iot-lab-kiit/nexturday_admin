@@ -14,6 +14,13 @@ import ParticipantsTable from "./components/Participants/ParticipantsTable.tsx";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/Global/ProtectedRoute.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
+import PendingEvents from "./components/SuperAdmin/PendingEvents.tsx";
+import CheckedEvents from "./components/SuperAdmin/CheckedEvents.tsx";
+import EventsPending from "./components/EventsPending.tsx";
+import MasterAdminLayout from "./components/MasterAdminLayout.tsx";
+import EventsChecked from "./components/EventsChecked.tsx";
+import MasterAdminEventDetails from "./components/MasterAdminEventDetails.tsx";
+import MasterAdminParticipantsTable from "./components/MasterAdminParticipantsTable.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -86,6 +93,23 @@ createRoot(document.getElementById("root")!).render(
               </ProtectedRoute>
             }
           />
+          <Route path="/master-admin" element={<MasterAdminLayout />}>
+            <Route
+              path="/master-admin/pending-events"
+              element={<EventsPending />}
+            />
+
+            <Route
+              path="/master-admin/checked-events"
+              element={<EventsChecked />}
+            />
+            <Route path="/master-admin/events/:id" element={<MasterAdminEventDetails />} />
+            <Route
+              path="/master-admin/events/:id/participants"
+              element={<MasterAdminParticipantsTable />}
+            />
+            {/* <Route path="master-admin/events/:id" element={<EventDetails />} /> */}
+          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>
