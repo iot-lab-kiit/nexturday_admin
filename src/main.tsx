@@ -21,6 +21,7 @@ import MasterAdminLayout from "./components/MasterAdminLayout.tsx";
 import EventsChecked from "./components/EventsChecked.tsx";
 import MasterAdminEventDetails from "./components/MasterAdminEventDetails.tsx";
 import MasterAdminParticipantsTable from "./components/MasterAdminParticipantsTable.tsx";
+import { ChatSection } from "./components/Chats/ChatSection.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -93,6 +94,17 @@ createRoot(document.getElementById("root")!).render(
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/events/:id/chat"
+  element={
+    <ProtectedRoute>
+     
+        <ChatSection />
+     
+    </ProtectedRoute>
+  }
+/>
+        
           <Route path="/master-admin" element={<MasterAdminLayout />}>
             <Route
               path="/master-admin/pending-events"
