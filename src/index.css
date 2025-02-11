@@ -68,4 +68,13 @@
   font-family: "montserrat";
   src: local("Montserrat-Regular"),
     url("./fonts/Montserrat-Regular.ttf") format("truetype");
+
+/* Hide scrollbar for Chrome, Safari, and Edge */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.no-scrollbar {
+  scrollbar-width: none;
 }
