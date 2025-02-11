@@ -1,23 +1,17 @@
+import { getPendingEvents, approveEvent, rejectEvent } from "@/api/event";
 import { updateMetadata } from "@/utils/metadata";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "react-hot-toast";
+import LoadingSpinner from "./Global/LoadingSpinner";
 
 // const OpenModal = () => {
 //   const [isOpen, setIsOpen] = useState(true);
 //   return <div className="bg-black opacity-30"></div>;
 // };
 
-const EventCard = ({ event, currentDate }) => {
-  // const [isModalOpen, setIsModalOpen] = useState(false);
+const EventCard = ({ event, currentDate, handleApprove, handleReject }) => {
   const navigate = useNavigate();
-
-  const handleApprove = (e) => {
-    e.stopPropagation();
-    // console.log(e)
-  };
-  const handleReject = (e) => {
-    e.stopPropagation();
-  };
 
   return (
     <>
@@ -112,7 +106,10 @@ const EventCard = ({ event, currentDate }) => {
         }}
       >
         <div className="rounded-lg relative flex justify-center">
-          <img src={event.images[0]?.url} className="rounded-lg w-full aspect-video object-cover relative z-20" />
+          <img
+            src={event.images[0]?.url}
+            className="rounded-lg w-full aspect-video object-cover relative z-20"
+          />
           <div className="bg-blue-500 w-fit px-5 py-1 rounded-md text-white absolute top-2 left-2 z-30">
             {event.price == 0 ? "Free" : `₹${event.price}`}
           </div>
@@ -120,7 +117,9 @@ const EventCard = ({ event, currentDate }) => {
         </div>
         <div className="flex flex-col gap-3">
           <h1 className="m-auto w-fit text-3xl font-bold pt-3">{event.name}</h1>
-          <div className="text-center text-base leading-tight">{event.about}</div>
+          <div className="text-center text-base leading-tight">
+            {event.about}
+          </div>
           <div>
             <div className="flex text-base font-semibold">
               <div className="w-1/2">
@@ -166,7 +165,6 @@ const EventCard = ({ event, currentDate }) => {
                 <div>{event.price}</div>
               </p>
             </div> */}
-            
           </div>
           <div className="flex flex-col gap-1 pt-2">
             <button className="py-1 text-lg hover:scale-[1.01] active:scale-95 transition-all bg-blue-200 text-black rounded-lg">
@@ -178,7 +176,7 @@ const EventCard = ({ event, currentDate }) => {
             <div className="flex gap-1 w-full">
               <button
                 onClick={(e) => {
-                  handleApprove(e);
+                  handleApprove(e, event.id);
                 }}
                 className="py-1 w-full text-lg hover:scale-[1.01] active:scale-95 transition-all bg-green-200 text-black rounded-lg"
               >
@@ -186,7 +184,7 @@ const EventCard = ({ event, currentDate }) => {
               </button>
               <button
                 onClick={(e) => {
-                  handleReject(e);
+                  handleReject(e, event.id);
                 }}
                 className="py-1 w-full text-lg hover:scale-[1.01] active:scale-95 transition-all bg-red-200 text-black rounded-lg"
               >
@@ -201,265 +199,13 @@ const EventCard = ({ event, currentDate }) => {
 };
 
 const EventsPending = () => {
-  // const navigate=useNavigate();
-  const response = {
-    success: true,
-    message: "events fetched successfully",
-//     name
-// about
-// websiteUrl?
-// emails
-// guidlines
-// phoneNumbers
-// registrationUrl?
-// price?
-// from
-// to
-// deadline
-// paid
-// tags
-// transcript?
-// maxTeamSize?
-// isOutsideParticipantAllowed?
-// details:[
-// name
-// about
-// from
-// to
-// type
-// venue: {
-// mapUrl
-// name
-// }
-// ]
-    data: {
-      currentPage: 1,
-      nextPage: null,
-      totalItems: 6,
-      totalPages: 1,
-      data: [
-        {
-          id: "22d1b3fa-036e-4117-ac0e-2a5968310256",
-          paid: false,
-          name: "Event name",
-          societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-          about:
-            "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-          websiteUrl: "https://www.techconference2024.com",
-          emails: [
-            "contact@techconference2024.com",
-            "info@techconference2024.com",
-          ],
-          guidlines: ["Please arrive on time.", "Bring your ID card."],
-          phoneNumbers: ["+1234567890", "+0987654321"],
-          registrationUrl: "https://www.techconference2024.com/register",
-          price: 0,
-          from: "2024-05-15T09:00:00.000Z",
-          to: "2024-05-15T18:00:00.000Z",
-          participationCount: 1,
-          createdAt: "2025-01-12T18:28:52.854Z",
-          updatedAt: "2025-01-12T20:40:58.502Z",
-          society: {
-            name: "society name",
-          },
-          images: [
-            {
-              key: "435d48b8427aa84305dacb3fb930f9af3b0d43f02306c1bb9050f2a7f37748f0",
-              url: "https://nexturday.s3.amazonaws.com/435d48b8427aa84305dacb3fb930f9af3b0d43f02306c1bb9050f2a7f37748f0",
-            },
-          ],
-        },
-        {
-          id: "c5133d34-3188-44ab-ba35-07d2815ef02e",
-          paid: false,
-          name: "test",
-          societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-          about:
-            "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-          websiteUrl: "https://www.techconference2024.com",
-          emails: [
-            "contact@techconference2024.com",
-            "info@techconference2024.com",
-          ],
-          guidlines: ["Please arrive on time.", "Bring your ID card."],
-          phoneNumbers: ["+1234567890", "+0987654321"],
-          registrationUrl: "https://www.techconference2024.com/register",
-          price: 50,
-          from: "2024-05-15T09:00:00.000Z",
-          to: "2024-05-15T18:00:00.000Z",
-          participationCount: 0,
-          createdAt: "2025-01-12T18:23:01.926Z",
-          updatedAt: "2025-01-12T20:40:22.559Z",
-          society: {
-            name: "test",
-          },
-          images: [
-            {
-              key: "7c363f46bf214911cfee1110ee28a0c7ee6ca21403d73937d8eeded8e5ac6831",
-              url: "https://nexturday.s3.amazonaws.com/7c363f46bf214911cfee1110ee28a0c7ee6ca21403d73937d8eeded8e5ac6831",
-            },
-          ],
-        },
-        {
-          id: "3ebc5236-8f43-422e-81bf-472d47440857",
-          paid: false,
-          name: "test",
-          societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-          about:
-            "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-          websiteUrl: "https://www.techconference2024.com",
-          emails: [
-            "contact@techconference2024.com",
-            "info@techconference2024.com",
-          ],
-          guidlines: ["Please arrive on time.", "Bring your ID card."],
-          phoneNumbers: ["+1234567890", "+0987654321"],
-          registrationUrl: "https://www.techconference2024.com/register",
-          price: 50,
-          from: "2024-05-15T09:00:00.000Z",
-          to: "2024-05-15T18:00:00.000Z",
-          participationCount: 0,
-          createdAt: "2025-01-12T18:21:09.822Z",
-          updatedAt: "2025-01-12T20:39:50.664Z",
-          society: {
-            name: "test",
-          },
-          images: [
-            {
-              key: "a2e164e68d54ad5c62ede2b3f18a22b344ec5f0ad3027014037e4d1aaa932361",
-              url: "https://nexturday.s3.amazonaws.com/a2e164e68d54ad5c62ede2b3f18a22b344ec5f0ad3027014037e4d1aaa932361",
-            },
-          ],
-        },
-        {
-          id: "bd1fe58d-9f7b-4b78-90e6-20608dda6e1f",
-          paid: false,
-          name: "test",
-          societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-          about:
-            "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-          websiteUrl: "https://www.techconference2024.com",
-          emails: [
-            "contact@techconference2024.com",
-            "info@techconference2024.com",
-          ],
-          guidlines: ["Please arrive on time.", "Bring your ID card."],
-          phoneNumbers: ["+1234567890", "+0987654321"],
-          registrationUrl: "https://www.techconference2024.com/register",
-          price: 50,
-          from: "2024-05-15T09:00:00.000Z",
-          to: "2024-05-15T18:00:00.000Z",
-          participationCount: 0,
-          createdAt: "2025-01-12T18:18:09.458Z",
-          updatedAt: "2025-01-12T20:39:10.254Z",
-          society: {
-            name: "test",
-          },
-          images: [
-            {
-              key: "248975797542a8ede6261d37adf449480bdea2a4ea02b674448256cf93a09c9d",
-              url: "https://nexturday.s3.amazonaws.com/248975797542a8ede6261d37adf449480bdea2a4ea02b674448256cf93a09c9d",
-            },
-          ],
-        },
-        {
-          id: "65853ff2-a988-4558-aea4-fc2d160c58f1",
-          paid: false,
-          name: "test",
-          societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-          about:
-            "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-          websiteUrl: "https://www.techconference2024.com",
-          emails: [
-            "contact@techconference2024.com",
-            "info@techconference2024.com",
-          ],
-          guidlines: ["Please arrive on time.", "Bring your ID card."],
-          phoneNumbers: ["+1234567890", "+0987654321"],
-          registrationUrl: "https://www.techconference2024.com/register",
-          price: 50,
-          from: "2024-05-15T09:00:00.000Z",
-          to: "2024-05-15T18:00:00.000Z",
-          participationCount: 0,
-          createdAt: "2025-01-12T18:15:42.535Z",
-          updatedAt: "2025-01-12T20:38:34.833Z",
-          society: {
-            name: "test",
-          },
-          images: [
-            {
-              key: "de43ce1a4a40c7f118fddd16e6e8ee86d464a0ffab9460310de4c33afb2f7734",
-              url: "https://nexturday.s3.amazonaws.com/de43ce1a4a40c7f118fddd16e6e8ee86d464a0ffab9460310de4c33afb2f7734",
-            },
-          ],
-        },
-        {
-          id: "c28f0b6a-42fa-4416-9348-3a641c7ead14",
-          paid: false,
-          name: "test",
-          societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-          about:
-            "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-          websiteUrl: "https://www.techconference2024.com",
-          emails: [
-            "contact@techconference2024.com",
-            "info@techconference2024.com",
-          ],
-          guidlines: ["Please arrive on time.", "Bring your ID card."],
-          phoneNumbers: ["+1234567890", "+0987654321"],
-          registrationUrl: "https://www.techconference2024.com/register",
-          price: 50,
-          from: "2024-05-15T09:00:00.000Z",
-          to: "2024-05-15T18:00:00.000Z",
-          participationCount: 0,
-          createdAt: "2025-01-12T18:06:09.929Z",
-          updatedAt: "2025-01-12T20:37:24.080Z",
-          society: {
-            name: "test",
-          },
-          images: [
-            {
-              key: "74bcc133a1583c2470e5c3aa8c3c9bfe0aede7a933c1abdfac8a1a9a67c6c100",
-              url: "https://nexturday.s3.amazonaws.com/74bcc133a1583c2470e5c3aa8c3c9bfe0aede7a933c1abdfac8a1a9a67c6c100",
-            },
-          ],
-        },
-        {
-          id: "c28f0b6a-42fa-4416-9348-3a641c7ead14",
-          paid: false,
-          name: "test",
-          societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-          about:
-            "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-          websiteUrl: "https://www.techconference2024.com",
-          emails: [
-            "contact@techconference2024.com",
-            "info@techconference2024.com",
-          ],
-          guidlines: ["Please arrive on time.", "Bring your ID card."],
-          phoneNumbers: ["+1234567890", "+0987654321"],
-          registrationUrl: "https://www.techconference2024.com/register",
-          price: 50,
-          from: "2025-05-15T09:00:00.000Z",
-          to: "2025-05-15T18:00:00.000Z",
-          participationCount: 0,
-          createdAt: "2025-01-12T18:06:09.929Z",
-          updatedAt: "2025-01-12T20:37:24.080Z",
-          society: {
-            name: "test",
-          },
-          images: [
-            {
-              key: "74bcc133a1583c2470e5c3aa8c3c9bfe0aede7a933c1abdfac8a1a9a67c6c100",
-              url: "https://nexturday.s3.amazonaws.com/74bcc133a1583c2470e5c3aa8c3c9bfe0aede7a933c1abdfac8a1a9a67c6c100",
-            },
-          ],
-        },
-      ],
-    },
-  };
-  const [events, setEvents] = useState(response.data.data);
+  const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(Date.now());
+  const [loading, setLoading] = useState(false); // Add loading state
+  const [currentPage, setCurrentPage] = useState(1); // Add currentPage state
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   useEffect(() => {
     updateMetadata({
       title: "Pending Events | Super Admin",
@@ -472,16 +218,110 @@ const EventsPending = () => {
     }, 60000);
     return () => clearInterval(interval);
   }, []);
+const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const res = await getPendingEvents(currentPage);
+        setEvents(res.data.data);
+        setTotalPages(res.data.totalPages);
+        setTotalItems(res.data.totalItems);
+        toast.success("Events fetched successfully");
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        toast.error("Error fetching events");
+      } finally {
+        setLoading(false);
+      }
+    };
+  useEffect(() => {
+    
+    fetchEvents();
+  }, [currentPage]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+  };
+
+  const handleApprove = async (e, eventId) => {
+    e.stopPropagation();
+    try {
+      await approveEvent(eventId);
+      toast.success("Event approved successfully");
+      fetchEvents();
+    } catch (error) {
+      console.error("Error approving event:", error);
+      toast.error("Failed to approve event");
+    }
+  };
+
+  const handleReject = async (e, eventId) => {
+    e.stopPropagation();
+    try {
+      await rejectEvent(eventId);
+      toast.success("Event rejected successfully");
+      fetchEvents();
+    } catch (error) {
+      console.error("Error rejecting event:", error);
+      toast.error("Failed to reject event");
+    }
+  };
 
   return (
     <div className="p-10 w-full h-fit bg-[#e6f7fc] font-montserrat rounded-xl">
       <h1 className="text-4xl font-bold pb-8">Pending Events</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-        {events &&
+        {loading ? (
+          <div className="text-center text-lg font-medium my-5">
+            <LoadingSpinner />
+          </div>
+        ) : events && events.length > 0 ? (
           events.map((event, index) => (
-            <EventCard key={index} event={event} currentDate={currentDate} />
-          ))}
+            <EventCard
+              key={index}
+              event={event}
+              currentDate={currentDate}
+              handleApprove={handleApprove}
+              handleReject={handleReject}
+            />
+          ))
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-gray-500">No events found</p>
+          </div>
+        )}
       </div>
+      {events && events.length > 0 && (
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages} ({totalItems} events)
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 text-sm rounded-md ${
+                currentPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 text-sm rounded-md ${
+                currentPage === totalPages
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

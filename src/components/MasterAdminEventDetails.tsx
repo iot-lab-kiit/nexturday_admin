@@ -3,126 +3,92 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import LoadingSpinner from "./Global/LoadingSpinner";
-import { getEventDetails } from "@/api/event";
+import { approveEvent, getEventDetails } from "@/api/event";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { updateMetadata } from "@/utils/metadata";
+import {toast} from "react-hot-toast";
 
-// interface Event {
-//   id: string;
-//   about: string;
-//   createdAt: string;
-//   emails: string[];
-//   guidlines: string[];
-//   images: { url: string }[];
-//   name: string;
-//   paid: boolean;
-//   participationCount: number;
-//   phoneNumbers: string[];
-//   price: number;
-//   registrationUrl: string;
-//   society: {
-//     name: string;
-//   };
-//   details: {
-//     name: string;
-//     about: string;
-//     from: string;
-//     to: string;
-//     type: string;
-//     venue: string;
-//     venueId: string;
-//   }[];
-// }
+interface Event {
+  id: string;
+  paid: boolean;
+  name: string;
+  societyId: string;
+  about: string;
+  websiteUrl: string;
+  emails: string[];
+  guidlines: string[];
+  phoneNumbers: string[];
+  registrationUrl: string | null;
+  price: number;
+  from: string;
+  to: string;
+  deadline: string;
+  maxTeamSize: number;
+  isOutsideParticipantAllowed: boolean;
+  tags: string[];
+  teamCount: number;
+  transcript: string | null;
+  isApproved: boolean;
+  createdAt: string;
+  updatedAt: string;
+  society: {
+    id: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+    websiteUrl: string;
+    createdAt: string;
+    updatedAt: string;
+    role: string;
+  };
+  details: {
+    id: string;
+    name: string;
+    from: string;
+    to: string;
+    type: string;
+    venueId: string | null;
+    eventId: string;
+    about: string;
+    createdAt: string;
+    updatedAt: string;
+    venue: {
+      mapUrl: string;
+      name: string;
+    } | null;
+  }[];
+  images: {
+    url: string;
+    key: string;
+  }[];
+}
 
 const MasterAdminEventDetails = () => {
-  const response = {
-    success: true,
-    message: "events fetched successfully",
-    data: {
-      id: "c28f0b6a-42fa-4416-9348-3a641c7ead14",
-      paid: true,
-      name: "Tech Conference 2024",
-      societyId: "8eada7d0-7157-4231-8a31-569e80ddf439",
-      about:
-        "A conference bringing together tech enthusiasts to discuss the latest trends in technology.",
-      websiteUrl: "https://www.techconference2024.com",
-      emails: ["contact@techconference2024.com", "info@techconference2024.com"],
-      guidlines: ["Please arrive on time.", "Bring your ID card."],
-      phoneNumbers: ["+1234567890", "+0987654321"],
-      registrationUrl: "https://www.techconference2024.com/register",
-      price: 50,
-      from: "2024-05-15T09:00:00.000Z",
-      to: "2024-05-15T18:00:00.000Z",
-      participationCount: 0,
-      createdAt: "2025-01-12T18:06:09.929Z",
-      updatedAt: "2025-01-12T18:06:09.929Z",
-      society: {
-        id: "8eada7d0-7157-4231-8a31-569e80ddf439",
-        name: "test",
-        email: "test@gmail.com",
-        phoneNumber: "1234567890",
-        websiteUrl: null,
-        createdAt: "2025-01-11T22:43:49.457Z",
-        updatedAt: "2025-01-11T22:43:49.457Z",
-      },
-      details: [
-        {
-          id: "dd9864f3-b4ea-4c6d-b596-13fe1de53b4b",
-          name: "Tech Talks",
-          from: "2024-05-15T09:00:00.000Z",
-          to: "2024-05-15T12:00:00.000Z",
-          type: "OFFLINE",
-          venueId: "bf9a1719-5e73-479e-b5f2-1ee7d51a5907",
-          eventId: "c28f0b6a-42fa-4416-9348-3a641c7ead14",
-          about:
-            "A series of presentations from industry experts on the latest trends in tech.",
-          createdAt: "2025-01-12T18:06:09.929Z",
-          updatedAt: "2025-01-12T18:06:09.929Z",
-          venue: {
-            id: "bf9a1719-5e73-479e-b5f2-1ee7d51a5907",
-            mapUrl: "https://maps.google.com/?q=VenueLocation",
-            name: "Tech Conference Hall",
-          },
-        },
-      ],
-      images: [
-        {
-          url: "https://nexturday.s3.amazonaws.com/435d48b8427aa84305dacb3fb930f9af3b0d43f02306c1bb9050f2a7f37748f0",
-          key: "2645fcb4c97aaf98b7256f31ae8f7df990b09b7c05772a1bb34cbb7171aa1e72",
-        },
-      ],
-    },
-  };
-  // const { id } = useParams();
-  const [event, setEvent] = useState();
-  const [loading, setLoading] = useState(false);
+  const { id } = useParams();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+const fetchEventDetails = async () => {
+  try {
+    const response = await getEventDetails(id!);
+    setEvent(response.data.data);
 
-  // useEffect(() => {
-  //   const fetchEventDetails = async () => {
-  //     try {
-  //       const response = await getEventDetails(id!);
-  //       setEvent(response.data.data);
-  //       // console.log(response);
-
-  //       updateMetadata({
-  //         title: response.data.data.name,
-  //         description: response.data.data.about,
-  //         keywords: `event, ${response.data.data.name}, ${response.data.data.society.name}, nexturday`,
-  //       });
-  //     } catch (error) {
-  //       console.error("Error fetching event details:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchEventDetails();
-  // }, [id]);
-
+    updateMetadata({
+      title: response.data.data.name,
+      description: response.data.data.about,
+      keywords: `event, ${response.data.data.name}, ${response.data.data.society.name}, nexturday`,
+    });
+  } catch (error) {
+    console.error("Error fetching event details:", error);
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
-    setEvent(response.data);
-  }, []);
+    
+
+    fetchEventDetails();
+  }, [id]);
 
   if (loading) {
     return (
@@ -136,7 +102,16 @@ const MasterAdminEventDetails = () => {
     return <div className="text-center py-10">Event not found</div>;
   }
 
-  const handleApprove = () => {};
+  const handleApprove = async (eventId:string) => {
+    try {
+      await approveEvent(eventId);
+      toast.success("Event approved successfully");
+      fetchEventDetails();
+    } catch (error) {
+      console.error("Error approving event:", error);
+      toast.error("Failed to approve event");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -157,8 +132,6 @@ const MasterAdminEventDetails = () => {
           </div>
         </div>
 
-        
-
         <div className="p-6 space-y-6 text-gray-800">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -176,7 +149,7 @@ const MasterAdminEventDetails = () => {
                 />
               </svg>
               <span>
-                {new Date(event.createdAt).toLocaleDateString("en-US", {
+                {new Date(event.from).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
@@ -186,26 +159,11 @@ const MasterAdminEventDetails = () => {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <svg
-                className="w-6 h-6 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span>KIIT University</span>
+              {event.tags.map((tag, index) => (
+                <div key={index} className="bg-gray-100 px-2 py-1 rounded-lg">
+                  {tag}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -265,20 +223,47 @@ const MasterAdminEventDetails = () => {
             <h2 className="text-xl font-semibold mb-3">Registration Details</h2>
             <div className="space-y-2">
               <p>Entry Fee: {event.paid ? `₹${event.price}` : "Free"}</p>
-              <p>Participants: {event.participationCount}</p>
+              <p>Participants: {event.teamCount}</p>
               <p>
-                Registration URL:{" "}
-                <a
-                  href={event.registrationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  {event.registrationUrl}
-                </a>
+                {event.maxTeamSize === 1 ? "Solo event" : `Team event (group of max. ${event.maxTeamSize})`}
               </p>
+              <p>
+                Outside Participants: {event.isOutsideParticipantAllowed ? "Allowed" : "Not Allowed"}
+              </p>
+              {event.registrationUrl && (
+                <p>
+                  Registration URL:{" "}
+                  <a
+                    href={event.registrationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {event.registrationUrl}
+                  </a>
+                </p>
+              )}
             </div>
           </div>
+
+          {event.transcript && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h2 className="text-xl font-semibold mb-3">Transcript</h2>
+              <div className="space-y-2">
+                <p>
+                  Transcript URL:{" "}
+                  <a
+                    href={event.transcript}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {event.transcript}
+                  </a>
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Sub Event Details Section */}
           {event.details && event.details.length > 0 && (
@@ -301,15 +286,17 @@ const MasterAdminEventDetails = () => {
                   </p>
                   <p>
                     <strong>Venue:</strong>{" "}
-                    {subEvent.type == "ONLINE" ? (
+                    {subEvent.type === "ONLINE" ? (
                       "ONLINE"
                     ) : (
-                      <a
-                        href={subEvent.venue.mapUrl}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {subEvent.venue.name}
-                      </a>
+                      subEvent.venue && (
+                        <a
+                          href={subEvent.venue.mapUrl}
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          {subEvent.venue.name}
+                        </a>
+                      )
                     )}
                   </p>
                 </div>
@@ -334,7 +321,7 @@ const MasterAdminEventDetails = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
               View Participants
