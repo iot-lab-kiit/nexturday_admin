@@ -296,6 +296,18 @@ const EventDetails = () => {
               />
               Edit Event
             </button>
+            <button
+              onClick={() => navigate(`/events/${event.id}/chat`)}
+              className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-2"
+            >
+              <Icon
+                icon="material-symbols:chat"
+                width="24"
+                height="24"
+                style={{ color: "#fff" }}
+              />
+              View Chat
+            </button>
           </div>
         </div>
       </div>
