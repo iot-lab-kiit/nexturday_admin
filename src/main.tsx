@@ -10,12 +10,13 @@ import AddEvent from "./components/Events/AddEvent.tsx";
 import EventPage from "./components/Events/EventPage.tsx";
 import EventDetails from "./components/Events/EventDetails.tsx";
 import ParticipantsTable from "./components/Participants/ParticipantsTable.tsx";
-import {ChatSection} from "./components/Chats/Chatsection.tsx";
+// import {ChatSection} from "./components/Chats/ChatWindow.tsx";
 
 // import EditEvent from "./components/Events/EditEvent.tsx";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/Global/ProtectedRoute.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
+import { ChatSection } from "./components/Chats/ChatSection.tsx";
 // import Chatsection from "./components/Chats/Chatsection.tsx";
 
 
@@ -41,6 +42,7 @@ createRoot(document.getElementById("root")!).render(
             element={
               <ProtectedRoute>
                 <ChangePassword />
+                
               </ProtectedRoute>
             }
           />

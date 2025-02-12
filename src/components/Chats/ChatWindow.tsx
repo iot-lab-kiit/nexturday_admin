@@ -1,11 +1,10 @@
-import { firestore } from "@/lib/firebase";
-import { collection, doc } from "firebase/firestore";
 import React, { useState, useEffect, useRef } from "react";
+import { firestore } from "@/lib/firebase";
+import { collection, doc, addDoc, Timestamp, onSnapshot, query, orderBy } from "firebase/firestore";
+import { useParams } from "react-router-dom";
 import { IoMdPerson } from "react-icons/io";
-import { useParams } from "react-router";
-import { getDocs } from "firebase/firestore";
-import { snapshot } from "node:test";
 
+// Define Message type
 type Message = {
   id: string;
   sender: string;
@@ -13,87 +12,110 @@ type Message = {
   timestamp: string;
 };
 
-type ChatWindowProps = {
-  messages: Message[];
-};
-
-type Announcement = {
-  id: string;
-  sender: string;
-  text: string;
-  timestamp: string; 
-}
-
-export const ChatWindow: React.FC<ChatWindowProps> = ({
-  messages: initialMessages,
-}) => {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+export const ChatWindow: React.FC = () => {
   const [messageText, setMessageText] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [announcements , setAnnouncements] = useState<Announcement[]>([]);
+  const params = useParams();
 
-  // Auto-scroll to the latest message
+  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
+  // Fetch messages from Firebase in real-time
+  useEffect(() => {
+    if (!params.id) return;
+
+    const eventsCol = collection(firestore, "events");
+    const eventDoc = doc(eventsCol, params.id);
+    const announcementsCol = collection(eventDoc, "announcements");
+
+    // Create a query that orders by timestamp
+    const announcementsQuery = query(announcementsCol, orderBy("timestamp", "asc"));
+
+    // Subscribe to real-time updates
+    const unsubscribe = onSnapshot(announcementsQuery, (snapshot) => {
+      const data = snapshot.docs.map((d) => {
+        const announcement = d.data();
+        return {
+          id: d.id,
+          sender: announcement.sender,
+          text: announcement.text,
+          timestamp:
+            announcement.timestamp instanceof Timestamp
+              ? new Date(announcement.timestamp.seconds * 1000).toLocaleString()
+              : "Unknown time",
+        };
+      });
+
+      setMessages(data); // Update state with the received messages
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [params.id]);
+
+  // Handle sending a new message
+  const handleSend = async () => {
     if (messageText.trim()) {
       const newMessage: Message = {
-        id: `${messages.length + 1}`,
-        sender: "Me",
+        id: `${messages.length + 1}`,  // Unique ID for the message
+        sender: "Admin", // Since it's only the admin panel
         text: messageText,
         timestamp: new Date().toLocaleTimeString(),
       };
-      setMessages((prev) => [...prev, newMessage]);
-      setMessageText("");
+
+      try {
+        const eventsCol = collection(firestore, "events");
+        const eventDoc = doc(eventsCol, params.id);
+        const announcementsCol = collection(eventDoc, "announcements");
+
+        // Add new message to Firestore
+        await addDoc(announcementsCol, {
+          sender: newMessage.sender,
+          text: newMessage.text,
+          timestamp: Timestamp.fromDate(new Date()),
+        });
+
+        setMessageText("");  // Clear the input field
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
     }
   };
 
-   const params = useParams()
-  // console.log( params.id)
-
-  useEffect (()=>{
-    const eventsCol = collection(firestore,"events");
-    const eventDoc =  doc(eventsCol,params.id)
-    const announcementsCol = collection(eventDoc,"announcements")
-    getDocs(announcementsCol).then((snap)=>{
-      setAnnouncements(snap.docs as unknown as Announcement[])
-    })
-  },[])
-
- 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Prevent the default action (new line in input)
+      handleSend();
+    }
+  };
 
   return (
-    <div className="chat-window flex flex-col h-full border-l border-gray-300">
-      {/* Message List */}
-      <div className="messages flex-grow p-2 sm:p-4 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar">
+    <div className="chat-window flex flex-col h-full  w-[70%] ">
+      {/* Messages List */}
+      <div className="messages flex-grow flex-col p-2 sm:p-4 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar">
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`message-item text-xs sm:text-base mb-2 flex ${
-              message.sender === "Me" ? "justify-end" : "justify-start"
-            }`}
+            className={`message-item text-xs sm:text-base mb-2 flex ${message.sender === "Admin" ? "justify-end" : "justify-start"}`}
           >
-            {message.sender !== "Me" && (
+            {message.sender !== "Admin" && (
               <div className="text-lg sm:text-3xl mr-3 self-end bg-gray-100 p-2 rounded-full">
                 <IoMdPerson />
               </div>
             )}
 
             <div
-              className={`message p-3 rounded-2xl w-1/2 break-words flex flex-col ${
-                message.sender === "Me"
-                  ? "ml-auto bg-blue-500 text-white"
-                  : "mr-auto bg-gray-200 text-black"
-              }`}
+              className={`message p-3 rounded-2xl w-[40%] break-words flex flex-col ${message.sender === "Admin" ? "ml-auto bg-blue-500 text-white" : "mr-auto bg-gray-200 text-black"}`}
             >
               <p className="text-sm font-semibold">{message.sender}</p>
               <p className="text-md">{message.text}</p>
               <p className="text-xs text-gray-400">{message.timestamp}</p>
             </div>
 
-            {message.sender === "Me" && (
+            {message.sender === "Admin" && (
               <div className="text-lg sm:text-3xl ml-3 self-end bg-blue-300 p-2 rounded-full">
                 <IoMdPerson />
               </div>
@@ -101,7 +123,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         ))}
 
-        {/* Invisible div to scroll into view */}
         <div ref={messagesEndRef} />
       </div>
 
@@ -114,6 +135,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             placeholder="Type a message..."
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <button
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-700"
