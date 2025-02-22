@@ -20,8 +20,9 @@ export interface FormDataType {
   deadline: string;
   eventTags: string;
   selectedFiles: File[];
-  selectedDocs: File[];
+  // selectedDocs: File[];
   backendImages?: BackendImage[];
   imagesKeys?: string[];
   details: DetailType[];
+  transcriptUrl: string;
 }
