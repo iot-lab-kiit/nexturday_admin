@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { ChatList } from "./ChatList";
 import { ChatWindow } from "./ChatWindow";
-import { useParams } from "react-router";
 
 type Chat = {
   id: string;

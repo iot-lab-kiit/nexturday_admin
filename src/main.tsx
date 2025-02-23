@@ -14,8 +14,6 @@ import ParticipantsTable from "./components/Participants/ParticipantsTable.tsx";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/Global/ProtectedRoute.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
-import PendingEvents from "./components/SuperAdmin/PendingEvents.tsx";
-import CheckedEvents from "./components/SuperAdmin/CheckedEvents.tsx";
 import EventsPending from "./components/EventsPending.tsx";
 import MasterAdminLayout from "./components/MasterAdminLayout.tsx";
 import EventsChecked from "./components/EventsChecked.tsx";

@@ -5,16 +5,21 @@ import { useNavigate } from "react-router";
 import { toast } from "react-hot-toast";
 import LoadingSpinner from "./Global/LoadingSpinner";
 
-const EventCard = ({ event, currentDate, handleReject }) => {
+const EventCard = ({
+  event,
+  handleReject,
+}: {
+  event: any;
+  handleReject: (
+    e: React.MouseEvent<HTMLButtonElement>,
+    eventId: string
+  ) => void;
+}) => {
   const navigate = useNavigate();
+  const [clicked, setClicked] = useState(false);
   return (
     <>
-      <div
-        onClick={() => {
-          navigate(`/master-admin/events/${event.id}`);
-        }}
-        className="bg-white p-2 rounded-xl border border-gray-400 hover:scale-[1.02] transition-all"
-      >
+      <div className="bg-white p-2 rounded-xl border border-gray-400 hover:scale-[1.02] transition-all">
         <div className="rounded-lg relative">
           <div className="rounded-lg relative flex justify-center">
             <img
@@ -79,7 +84,12 @@ const EventCard = ({ event, currentDate, handleReject }) => {
             </div>
           </div>
           <div className="flex flex-col gap-1 pt-2">
-            <button className="py-1 text-lg hover:scale-[1.01] active:scale-95 transition-all bg-blue-200 text-black rounded-lg">
+            <button
+              onClick={() => {
+                navigate(`/master-admin/events/${event.id}`);
+              }}
+              className="py-1 text-lg hover:scale-[1.01] active:scale-95 transition-all bg-blue-200 text-black rounded-lg"
+            >
               View Details
             </button>
             <div className="flex gap-1 w-full">
@@ -92,11 +102,38 @@ const EventCard = ({ event, currentDate, handleReject }) => {
               </div>
               <button
                 onClick={(e) => {
+                  e.preventDefault();
+                  setClicked(true);
                   handleReject(e, event.id);
                 }}
-                className="py-1 w-full text-lg hover:scale-[1.01] active:scale-95 transition-all bg-red-200 text-black rounded-lg"
+                disabled={clicked}
+                className="py-1 w-full flex justify-center items-center text-lg hover:scale-[1.01] active:scale-95 transition-all bg-red-200 text-black rounded-lg"
               >
-                Reject Event
+                {clicked ? (
+                  <div>
+                    <svg
+                      className="animate-spin h-8 w-8 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  "Reject Event"
+                )}
               </button>
             </div>
           </div>
@@ -108,7 +145,7 @@ const EventCard = ({ event, currentDate, handleReject }) => {
 
 const EventsChecked = () => {
   const [events, setEvents] = useState([]);
-  const [currentDate, setCurrentDate] = useState(Date.now());
+  // const [currentDate, setCurrentDate] = useState(Date.now());
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -121,10 +158,10 @@ const EventsChecked = () => {
       keywords: "events, admin, approval",
     });
 
-    const interval = setInterval(() => {
-      setCurrentDate(Date.now());
-    }, 60000);
-    return () => clearInterval(interval);
+    // const interval = setInterval(() => {
+    //   setCurrentDate(Date.now());
+    // }, 60000);
+    // return () => clearInterval(interval);
   }, []);
   const fetchEvents = async () => {
     try {
@@ -145,12 +182,12 @@ const EventsChecked = () => {
     fetchEvents();
   }, [currentPage]);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
   };
 
-  const handleReject = async (e, eventId) => {
+  const handleReject = async (e, eventId: string) => {
     e.preventDefault();
     try {
       await rejectEvent(eventId);
@@ -175,7 +212,6 @@ const EventsChecked = () => {
             <EventCard
               key={index}
               event={event}
-              currentDate={currentDate}
               handleReject={handleReject}
             />
           ))

@@ -102,9 +102,13 @@ const fetchEventDetails = async () => {
     return <div className="text-center py-10">Event not found</div>;
   }
 
-  const handleApprove = async (eventId:string) => {
+  const handleApprove = async () => {
     try {
-      await approveEvent(eventId);
+      if (id) {
+        await approveEvent(id);
+      } else {
+        toast.error("Event ID is missing");
+      }
       toast.success("Event approved successfully");
       fetchEventDetails();
     } catch (error) {
@@ -225,7 +229,7 @@ const fetchEventDetails = async () => {
               <p>Entry Fee: {event.paid ? `₹${event.price}` : "Free"}</p>
               <p>Participants: {event.teamCount}</p>
               <p>
-                {event.maxTeamSize === 1 ? "Solo event" : `Team event (group of max. ${event.maxTeamSize})`}
+                {event.maxTeamSize == 1 ? "Solo event" : `Team event (group of max. ${event.maxTeamSize})`}
               </p>
               <p>
                 Outside Participants: {event.isOutsideParticipantAllowed ? "Allowed" : "Not Allowed"}
@@ -327,7 +331,7 @@ const fetchEventDetails = async () => {
               View Participants
             </button>
             <button
-              onClick={handleApprove}
+              onClick={() => handleApprove()}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
             >
               <Icon

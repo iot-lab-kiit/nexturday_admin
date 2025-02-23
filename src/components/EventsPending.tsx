@@ -10,8 +10,17 @@ import LoadingSpinner from "./Global/LoadingSpinner";
 //   return <div className="bg-black opacity-30"></div>;
 // };
 
-const EventCard = ({ event, currentDate, handleApprove, handleReject }) => {
+interface EventCardProps {
+  event: any;
+  handleApprove: (e: React.MouseEvent<HTMLButtonElement>, eventId: string) => void;
+  handleReject: (e: React.MouseEvent<HTMLButtonElement>, eventId: string) => void;
+}
+
+const EventCard = ({ event, handleApprove, handleReject }: EventCardProps) => {
   const navigate = useNavigate();
+
+  const [isApprovedClicked, setIsApprovedClicked] = useState(false);
+  const [isRejectClicked, setIsRejectClicked] = useState(false);
 
   return (
     <>
@@ -99,12 +108,7 @@ const EventCard = ({ event, currentDate, handleApprove, handleReject }) => {
           </div>
         </div>
       </div> */}
-      <div
-        className="bg-white p-2 rounded-xl border border-gray-400 hover:scale-[1.02] transition-all"
-        onClick={() => {
-          navigate(`/master-admin/events/${event.id}`);
-        }}
-      >
+      <div className="bg-white p-2 rounded-xl border border-gray-400 hover:scale-[1.02] transition-all">
         <div className="rounded-lg relative flex justify-center">
           <img
             src={event.images[0]?.url}
@@ -167,7 +171,12 @@ const EventCard = ({ event, currentDate, handleApprove, handleReject }) => {
             </div> */}
           </div>
           <div className="flex flex-col gap-1 pt-2">
-            <button className="py-1 text-lg hover:scale-[1.01] active:scale-95 transition-all bg-blue-200 text-black rounded-lg">
+            <button
+              onClick={() => {
+                navigate(`/master-admin/events/${event.id}`);
+              }}
+              className="py-1 text-lg hover:scale-[1.01] active:scale-95 transition-all bg-blue-200 text-black rounded-lg"
+            >
               View Details
             </button>
             {/* <button onClick={} className="py-1 text-lg hover:scale-[1.01] active:scale-95 transition-all bg-blue-200 text-black rounded-lg">
@@ -176,19 +185,71 @@ const EventCard = ({ event, currentDate, handleApprove, handleReject }) => {
             <div className="flex gap-1 w-full">
               <button
                 onClick={(e) => {
+                  setIsApprovedClicked(true);
                   handleApprove(e, event.id);
                 }}
-                className="py-1 w-full text-lg hover:scale-[1.01] active:scale-95 transition-all bg-green-200 text-black rounded-lg"
+                disabled={isApprovedClicked || isRejectClicked}
+                className="py-1 flex justify-center items-center w-full text-lg hover:scale-[1.01] active:scale-95 transition-all bg-green-200 text-black rounded-lg"
               >
-                Approve Event
+                {isApprovedClicked ? (
+                  <div className="w-fit m-auto">
+                    <svg
+                      className="animate-spin h-8 w-8 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  "Approve Event"
+                )}
               </button>
               <button
                 onClick={(e) => {
+                  setIsRejectClicked(true);
                   handleReject(e, event.id);
                 }}
-                className="py-1 w-full text-lg hover:scale-[1.01] active:scale-95 transition-all bg-red-200 text-black rounded-lg"
+                disabled={isRejectClicked || isApprovedClicked}
+                className="py-1 flex justify-center items-center w-full text-lg hover:scale-[1.01] active:scale-95 transition-all bg-red-200 text-black rounded-lg"
               >
-                Reject Event
+                {isRejectClicked ? (
+                  <div>
+                    <svg
+                      className="animate-spin h-8 w-8 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  "Reject Event"
+                )}
               </button>
             </div>
           </div>
@@ -200,7 +261,6 @@ const EventCard = ({ event, currentDate, handleApprove, handleReject }) => {
 
 const EventsPending = () => {
   const [events, setEvents] = useState([]);
-  const [currentDate, setCurrentDate] = useState(Date.now());
   const [loading, setLoading] = useState(false); // Add loading state
   const [currentPage, setCurrentPage] = useState(1); // Add currentPage state
   const [totalPages, setTotalPages] = useState(1);
@@ -213,37 +273,36 @@ const EventsPending = () => {
       keywords: "events, admin, approval",
     });
 
-    const interval = setInterval(() => {
-      setCurrentDate(Date.now());
-    }, 60000);
-    return () => clearInterval(interval);
+    // const interval = setInterval(() => {
+    //   setCurrentDate(Date.now());
+    // }, 60000);
+    // return () => clearInterval(interval);
   }, []);
-const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const res = await getPendingEvents(currentPage);
-        setEvents(res.data.data);
-        setTotalPages(res.data.totalPages);
-        setTotalItems(res.data.totalItems);
-        toast.success("Events fetched successfully");
-      } catch (error) {
-        console.error("Error fetching events:", error);
-        toast.error("Error fetching events");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const res = await getPendingEvents(currentPage);
+      setEvents(res.data.data);
+      setTotalPages(res.data.totalPages);
+      setTotalItems(res.data.totalItems);
+      toast.success("Events fetched successfully");
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      toast.error("Error fetching events");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    
     fetchEvents();
   }, [currentPage]);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
   };
 
-  const handleApprove = async (e, eventId) => {
+  const handleApprove = async (e: React.MouseEvent<HTMLButtonElement>, eventId: string) => {
     e.stopPropagation();
     try {
       await approveEvent(eventId);
@@ -255,7 +314,7 @@ const fetchEvents = async () => {
     }
   };
 
-  const handleReject = async (e, eventId) => {
+  const handleReject = async (e: React.MouseEvent<HTMLButtonElement>, eventId: string) => {
     e.stopPropagation();
     try {
       await rejectEvent(eventId);
@@ -280,7 +339,7 @@ const fetchEvents = async () => {
             <EventCard
               key={index}
               event={event}
-              currentDate={currentDate}
+              // currentDate={currentDate}
               handleApprove={handleApprove}
               handleReject={handleReject}
             />

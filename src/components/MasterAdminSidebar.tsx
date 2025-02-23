@@ -1,7 +1,5 @@
-import { MdEventAvailable } from "react-icons/md";
 import { RiShutDownLine } from "react-icons/ri";
-import { FaPlus } from "react-icons/fa6";
-import { UserRoundPen, X } from "lucide-react";
+import {  X } from "lucide-react";
 import { useNavigate } from "react-router";
 // import { useNavigate } from "react-router-dom";
 
@@ -10,8 +8,6 @@ interface SidebarProps {
   setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isLoggedin: boolean;
   setIsLoggedin: React.Dispatch<React.SetStateAction<boolean>>;
-  userName: string | null;
-  userEmail: string | null;
 }
 
 const MarsterAdminSidebar: React.FC<SidebarProps> = ({
@@ -19,8 +15,6 @@ const MarsterAdminSidebar: React.FC<SidebarProps> = ({
   setSidebarOpen,
   isLoggedin,
   setIsLoggedin,
-  userName,
-  userEmail,
 }) => {
   const navigate = useNavigate();
   return (
@@ -40,11 +34,11 @@ const MarsterAdminSidebar: React.FC<SidebarProps> = ({
         <div className="h-[10vh] p-4 mx-2 space-y-4">
           <div className="flex flex-col gap-2 pt-5">
             <p className="text-3xl text-center font-bold px-2  rounded-md text-white">
-              {userName || "Master Admin"}
+              {"Master Admin"}
             </p>
-            <p className="text-center text-sm px-2 text-white">
+            {/* <p className="text-center text-sm px-2 text-white">
               {userEmail || "master-admin@nexterday.com"}
-            </p>
+            </p> */}
           </div>
           {/* Header */}
           {/* <div
@@ -107,7 +101,7 @@ const MarsterAdminSidebar: React.FC<SidebarProps> = ({
               setIsLoggedin(false);
               navigate("/");
             }}
-            className="flex flex-row justify-center items-center gap-3 text-xl bg-blue-600 rounded-xl "
+            className="text-center flex justify-center items-center gap-2 text-xl font-bold bg-blue-600 p-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all "
           >
             <RiShutDownLine />
             <p>Logout</p>

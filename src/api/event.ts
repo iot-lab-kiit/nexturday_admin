@@ -1,7 +1,7 @@
 import api from "@/api/api_instance";
 import axios from "axios";
 
-export const getEvents = async (page:number) => {
+export const getEvents = async (page: number) => {
   try {
     const response = await api.get("/api/events/society", {
       params: {
@@ -38,7 +38,7 @@ export const getAllEvents = async (page: number) => {
 export const rejectEvent = async (id: string) => {
   try {
     const response = await axios.patch(
-      `${import.meta.env.VITE_BASE_URL}/api/admin/event/approve/${id}`,
+      `${import.meta.env.VITE_BASE_URL}/api/admin/event/reject/${id}`,
       {},
       {
         headers: {
@@ -46,6 +46,8 @@ export const rejectEvent = async (id: string) => {
         },
       }
     );
+    console.log(response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error rejecting event:", error);
@@ -78,7 +80,7 @@ export const getPendingEvents = async (page: number) => {
         page: page,
         field: "createdAt",
         direction: "desc",
-        isApproved: "false",
+        isApproved: false,
       },
     });
     console.log(response.data);
@@ -96,7 +98,7 @@ export const getApprovedEvents = async (page: number) => {
         page: page,
         field: "createdAt",
         direction: "desc",
-        isApproved: "true",
+        isApproved: true,
       },
     });
     console.log(response.data);

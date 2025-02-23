@@ -1,13 +1,26 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 import MasterAdminSidebar from "./MasterAdminSidebar";
 import { Menu } from "lucide-react";
+import { checkUser } from "@/api/checkUser";
 
 const MasterAdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggedin, setIsLoggedin] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  useEffect(() => {
+    const checkUserLoggedIn = async () => {
+      try {
+        const response = await checkUser();
+        setIsLoggedin(response ? true : false);
+      } catch (error) {
+        console.error("Error fetching user email:", error);
+        setIsLoggedin(false);
+      }
+    };
+
+    checkUserLoggedIn();
+  }, []);
+
   return (
     <div className="flex h-screen w-full p-4 relative">
       <MasterAdminSidebar
@@ -15,8 +28,6 @@ const MasterAdminLayout = () => {
         setSidebarOpen={setSidebarOpen}
         isLoggedin={isLoggedin}
         setIsLoggedin={setIsLoggedin}
-        userName={userName}
-        userEmail={userEmail}
       />
       <div className="md:hidden absolute top-4 left-4 h-full">
         <Menu
