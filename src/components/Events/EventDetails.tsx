@@ -251,6 +251,19 @@ const EventDetails = () => {
           </div>
 
           {/* transcript url */}
+          {event.transcriptUrl && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h2 className="text-xl font-semibold mb-3">Transcript</h2>
+              <a
+                href={event.transcriptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                {event.transcriptUrl}
+              </a>
+            </div>
+          )}
 
           {/* Sub Event Details Section */}
           {event.details && event.details.length > 0 && (
