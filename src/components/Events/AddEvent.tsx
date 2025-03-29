@@ -77,7 +77,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     price: 0,
     deadline: "",
     selectedFiles: [],
-    selectedDocs: [],
+    // selectedDocs: [],
+    transcriptUrl: "",
     backendImages: [],
     imagesKeys: [],
     details: [
@@ -177,7 +178,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       price: apiData.price || 0,
       deadline: formatDateForInput(apiData.deadline || ""),
       selectedFiles: [],
-      selectedDocs: [],
+      // selectedDocs: [],
+      transcriptUrl: apiData.transcriptUrl || "",
       backendImages: apiData.images || [],
       details:
         apiData.details?.map((subEvent: DetailType) => ({
@@ -213,10 +215,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     const { id, value, type } = e.target;
 
     // Handle checkbox inputs
-    const checked =
-      type === "checkbox" && e.target instanceof HTMLInputElement
-        ? e.target.checked
-        : undefined;
+    const checked = type === "checkbox" && e.target instanceof HTMLInputElement ? e.target.checked : false;
 
     // Handle file inputs
     const file =
@@ -275,59 +274,59 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   //For document upload
-  const handleDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  // const handleDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const files = e.target.files;
+  //   if (!files) return;
 
-    const newFiles = Array.from(files);
-    const currentFiles = formData.selectedDocs;
+  //   const newFiles = Array.from(files);
+  //   const currentFiles = formData.selectedDocs;
 
-    // Check file limit
-    if (currentFiles.length + newFiles.length > 1) {
-      handleError("You can upload a maximum of 1 pdf.");
-      e.target.value = "";
-      return;
-    }
+  //   // Check file limit
+  //   if (currentFiles.length + newFiles.length > 1) {
+  //     handleError("You can upload a maximum of 1 pdf.");
+  //     e.target.value = "";
+  //     return;
+  //   }
 
-    try {
-      const compressedFiles = await Promise.all(
-        newFiles.map(async (file) => {
-          try {
-            if (file.type === "application/pdf") {
-              const fileSizeInMB = file.size / (1024 * 1024);
-              if (fileSizeInMB > 10) {
-                handleError(
-                  `${file.name} exceeds 10 MB and won't be processed.`
-                );
-                return null; // Skip large files
-              }
-              return file; // Return PDF file without compression
-            } else {
-              handleError(`${file.name} is not a PDF file.`);
-              return;
-            }
-          } catch (error) {
-            console.error("Processing failed for file:", file.name, error);
-            return file;
-          }
-        })
-      );
+  //   try {
+  //     const compressedFiles = await Promise.all(
+  //       newFiles.map(async (file) => {
+  //         try {
+  //           if (file.type === "application/pdf") {
+  //             const fileSizeInMB = file.size / (1024 * 1024);
+  //             if (fileSizeInMB > 10) {
+  //               handleError(
+  //                 `${file.name} exceeds 10 MB and won't be processed.`
+  //               );
+  //               return null; // Skip large files
+  //             }
+  //             return file; // Return PDF file without compression
+  //           } else {
+  //             handleError(`${file.name} is not a PDF file.`);
+  //             return;
+  //           }
+  //         } catch (error) {
+  //           console.error("Processing failed for file:", file.name, error);
+  //           return file;
+  //         }
+  //       })
+  //     );
 
-      setFormData((prev) => ({
-        ...prev,
-        selectedDocs: currentFiles.concat(
-          compressedFiles.filter(
-            (file): file is File => file !== null && file !== undefined
-          )
-        ),
-      }));
-    } catch (error) {
-      console.error("Error during file processing:", error);
-      handleError("Failed to process the selected files.");
-    } finally {
-      e.target.value = ""; // Reset input value
-    }
-  };
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       selectedDocs: currentFiles.concat(
+  //         compressedFiles.filter(
+  //           (file): file is File => file !== null && file !== undefined
+  //         )
+  //       ),
+  //     }));
+  //   } catch (error) {
+  //     console.error("Error during file processing:", error);
+  //     handleError("Failed to process the selected files.");
+  //   } finally {
+  //     e.target.value = ""; // Reset input value
+  //   }
+  // };
 
   const handleRemoveImage = (index: number, isBackend: boolean) => {
     if (isBackend) {
@@ -356,27 +355,27 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   //Remove document
-  const handleRemoveDoc = (index: number) => {
-    if (index === 0) {
-      setFormData((prev) => {
-        const updatedDocs = [...prev.selectedDocs];
-        updatedDocs.splice(index, 1);
-        return {
-          ...prev,
-          selectedDocs: updatedDocs,
-        };
-      });
-    } else {
-      setFormData((prev) => {
-        const updatedFiles = [...prev.selectedDocs];
-        updatedFiles.splice(index, 1);
-        return {
-          ...prev,
-          selectedDocs: updatedFiles,
-        };
-      });
-    }
-  };
+  // const handleRemoveDoc = (index: number) => {
+  //   if (index === 0) {
+  //     setFormData((prev) => {
+  //       const updatedDocs = [...prev.selectedDocs];
+  //       updatedDocs.splice(index, 1);
+  //       return {
+  //         ...prev,
+  //         selectedDocs: updatedDocs,
+  //       };
+  //     });
+  //   } else {
+  //     setFormData((prev) => {
+  //       const updatedFiles = [...prev.selectedDocs];
+  //       updatedFiles.splice(index, 1);
+  //       return {
+  //         ...prev,
+  //         selectedDocs: updatedFiles,
+  //       };
+  //     });
+  //   }
+  // };
 
   const handleAddGuideline = () => {
     setFormData((prev) => ({
@@ -543,6 +542,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       registrationUrl,
       imagesKeys,
       backendImages,
+      transcriptUrl
     } = formData;
 
     if (
@@ -576,9 +576,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     //   return handleError("Please upload at least one Document!");
     // }
 
-    if (formData.selectedDocs.length > 1) {
-      return handleError("You can upload a maximum of 1 Document");
-    }
+    // if (formData.selectedDocs.length > 1) {
+    //   return handleError("You can upload a maximum of 1 Document");
+    // }
 
     // Convert dates to ISO format
     const fromISO = new Date(formData.fromDate).toISOString();
@@ -709,17 +709,24 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       }
     }
 
+    if(!transcriptUrl){
+      return handleError("Transcript URL is required!");
+    }
+
     // Create FormData
     const formDataToSend = new FormData();
     formDataToSend.append("name", eventName);
     formDataToSend.append("about", about);
     formDataToSend.append("websiteUrl", website || "");
     formDataToSend.append("registrationUrl", registrationUrl || "");
-
+    formDataToSend.append("transcriptUrl", transcriptUrl);
     formDataToSend.append("price", isPaidEvent ? String(price) : "0");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
+    formDataToSend.append("isOutsideParticipantsAllowed", formData.isOutsideParticipantsAllowed.toString());
+    formDataToSend.append("teamSize", String(formData.teamSize));
+    formDataToSend.append("type", eventType);
     formDataToSend.append(
       "deadline",
       new Date(formData.deadline).toISOString()
@@ -753,9 +760,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     formData.selectedFiles.forEach((file) => {
       formDataToSend.append("images", file);
     });
-    formData.selectedDocs.forEach((file) => {
-      formDataToSend.append("pdf", file);
-    });
+    // formData.selectedDocs.forEach((file) => {
+    //   formDataToSend.append("pdf", file);
+    // });
 
     if (isEditing && imagesKeys && imagesKeys.length > 0) {
       formData.imagesKeys?.forEach((key, index) => {
@@ -766,8 +773,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     // Show loader toast
     const toastId = toast.loading("Submitting form...");
 
+    console.log("formdata", formData);
+    console.log("formdatatosend", formDataToSend);
     try {
       if (isEditing) {
+        console.log("formdatatosend", formDataToSend);
         await updateEvent(id, formDataToSend);
       } else {
         await CreateEvent(formDataToSend);
@@ -1590,16 +1600,16 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 </span>
               </div> */}
 
-              <input
+              {/* <input
                 type="file"
                 id="nocDocument"
                 accept=".pdf"
                 className="hidden"
                 multiple
                 onChange={(e) => handleDocChange(e)}
-              />
+              /> */}
 
-              {formData.selectedDocs.length > 0 && (
+              {/* {formData.selectedDocs.length > 0 && (
                 <div className="mt-4">
                   <p className="text-gray-700 text-sm font-semibold">
                     Newly Uploaded Files:
@@ -1627,7 +1637,26 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                     })}
                   </div>
                 </div>
-              )}
+              )} */}
+
+              {/* transcript url input */}
+              <div className="flex flex-col gap-2">
+                  <label
+                    className="text-gray-700 text-sm font-bold"
+                    htmlFor="transcriptUrl"
+                  >
+                    Transcript URL <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="transcriptUrl"
+                    placeholder="Enter Transcript Url"
+                    value={formData.transcriptUrl}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                  />
+                </div>
+
 
               {/* Confirmation Modal */}
               <ConfirmationModal

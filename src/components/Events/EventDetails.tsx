@@ -11,6 +11,7 @@ interface Event {
   id: string;
   about: string;
   createdAt: string;
+  isOutsideParticipantsAllowed: string;
   emails: string[];
   guidlines: string[];
   images: { url: string }[];
@@ -20,6 +21,8 @@ interface Event {
   phoneNumbers: string[];
   price: number;
   registrationUrl: string;
+  transcriptUrl: string;
+  eventTags: string[];
   society: {
     name: string;
   };
@@ -45,7 +48,7 @@ const EventDetails = () => {
       try {
         const response = await getEventDetails(id!);
         setEvent(response.data.data);
-        // console.log(response);
+        console.log(response.data.data);
 
         updateMetadata({
           title: response.data.data.name,
@@ -73,6 +76,9 @@ const EventDetails = () => {
   if (!event) {
     return <div className="text-center py-10">Event not found</div>;
   }
+
+  console.log(event);
+  
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -222,19 +228,42 @@ const EventDetails = () => {
             <div className="space-y-2">
               <p>Entry Fee: {event.paid ? `₹${event.price}` : "Free"}</p>
               <p>Participants: {event.participationCount}</p>
-              <p>
-                Registration URL:{" "}
-                <a
-                  href={event.registrationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  {event.registrationUrl}
-                </a>
-              </p>
+              {/* <p>Outside Participant: {event.isOutsideParticipantsAllowed}</p> */}
+              {event.isOutsideParticipantsAllowed === "true" ? (
+                <p>Outside Participant is allowed</p>
+              ) : (
+                <p>Outside Participant is not allowed</p>
+              )}
+              {event.registrationUrl && (
+                <p>
+                  Registration URL:{" "}
+                  <a
+                    href={event.registrationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {event.registrationUrl}
+                  </a>
+                </p>
+              )}
             </div>
           </div>
+
+          {/* transcript url */}
+          {event.transcriptUrl && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h2 className="text-xl font-semibold mb-3">Transcript</h2>
+              <a
+                href={event.transcriptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                {event.transcriptUrl}
+              </a>
+            </div>
+          )}
 
           {/* Sub Event Details Section */}
           {event.details && event.details.length > 0 && (
