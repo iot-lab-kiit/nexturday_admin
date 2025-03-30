@@ -75,6 +75,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
+    qr: undefined,
     deadline: "",
     selectedFiles: [],
     // selectedDocs: [],
@@ -101,6 +102,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setloading] = useState(false);
   const [oneDay, setOneDay] = useState(false);
+  const [qrFile, setQrFile] = useState<File | null>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -176,6 +179,10 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
       price: apiData.price || 0,
+      qr: apiData.qr
+        ? new File([apiData.qr], "qr-code.png", { type: "image/png" })
+        : undefined,
+      // qr: apiData.qr || null,
       deadline: formatDateForInput(apiData.deadline || ""),
       selectedFiles: [],
       // selectedDocs: [],
@@ -215,7 +222,10 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     const { id, value, type } = e.target;
 
     // Handle checkbox inputs
-    const checked = type === "checkbox" && e.target instanceof HTMLInputElement ? e.target.checked : false;
+    const checked =
+      type === "checkbox" && e.target instanceof HTMLInputElement
+        ? e.target.checked
+        : false;
 
     // Handle file inputs
     const file =
@@ -232,6 +242,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+
+    console.log("event file", files);
 
     const newFiles = Array.from(files);
     const currentFiles = formData.selectedFiles;
@@ -270,6 +282,39 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       handleError("Failed to process the selected files.");
     } finally {
       e.target.value = ""; // Reset input value
+    }
+  };
+
+  const handleQrChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    console.log("qr file", file);
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      handleError("Please upload a valid image file.");
+      e.target.value = "";
+      return;
+    }
+
+    // Compress the image
+    try {
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+      });
+
+      setQrFile(compressedFile);
+      setFormData((prev) => ({
+        ...prev,
+        qr: compressedFile,
+      })); // Update formData with the compressed QR code image
+    } catch (error) {
+      console.error("Compression failed:", error);
+      handleError("Failed to process the QR image.");
+    } finally {
+      e.target.value = ""; // Reset input
     }
   };
 
@@ -352,6 +397,13 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         };
       });
     }
+  };
+
+  const handleRemoveQr = () => {
+    setFormData((prev) => ({
+      ...prev,
+      qr: undefined,
+    }));
   };
 
   //Remove document
@@ -542,7 +594,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       registrationUrl,
       imagesKeys,
       backendImages,
-      transcriptUrl
+      transcriptUrl,
     } = formData;
 
     if (
@@ -704,12 +756,16 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         return handleError("Website URL is required for paid events!");
       }
 
+      // if (!qrFile) {
+      //   return handleError("QR code is required for paid events!");
+      // }
+
       if (!registrationUrl || !registrationUrl.trim()) {
         return handleError("Registration URL is required for paid events!");
       }
     }
 
-    if(!transcriptUrl){
+    if (!transcriptUrl) {
       return handleError("Transcript URL is required!");
     }
 
@@ -721,10 +777,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     formDataToSend.append("registrationUrl", registrationUrl || "");
     formDataToSend.append("transcriptUrl", transcriptUrl);
     formDataToSend.append("price", isPaidEvent ? String(price) : "0");
+    formDataToSend.append("qr", qrFile || "");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
-    formDataToSend.append("isOutsideParticipantsAllowed", formData.isOutsideParticipantsAllowed.toString());
+    formDataToSend.append(
+      "isOutsideParticipantsAllowed",
+      formData.isOutsideParticipantsAllowed.toString()
+    );
     formDataToSend.append("teamSize", String(formData.teamSize));
     formDataToSend.append("type", eventType);
     formDataToSend.append(
@@ -732,7 +792,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       new Date(formData.deadline).toISOString()
     );
 
-    //add tags using 
+    //add tags using
     formDataToSend.append("tags[0]", "tech");
 
     const validEmails = formData.emails.filter((email) => email.trim());
@@ -1253,6 +1313,63 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                         placeholder="Enter price"
                         className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                       />
+
+                      {/* Upload Qr image */}
+
+                      <label className="text-gray-700 text-sm font-bold">
+                        Uoload QR for payment{" "}
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById("qr")?.click()}
+                          className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
+                        >
+                          <MdOutlineFileUpload size={20} />{" "}
+                          <span>Upload Images</span>
+                        </button>
+                        <span className="text-gray-500 text-sm">
+                          (You can upload a maximum of 1 image of ideally 1X1
+                          ratio.)
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        id="qr"
+                        accept="image/*"
+                        className="hidden"
+                        multiple
+                        onChange={(e) => handleQrChange(e)}
+                      />
+                      {/* Display Newly Uploaded QR Image */}
+                      {formData.qr && (
+                        <div className="mt-4">
+                          <p className="text-gray-700 text-sm font-semibold">
+                            Newly Uploaded QR Images:
+                          </p>
+                          <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
+                              <img
+                                src={qrFile ? URL.createObjectURL(qrFile) : ""}
+                                alt="Uploaded QR"
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQrFile(null);
+                                  handleRemoveQr();
+                                }}
+                                className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                                aria-label="Remove QR image"
+                              >
+                                <MdDelete size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1641,22 +1758,21 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
               {/* transcript url input */}
               <div className="flex flex-col gap-2">
-                  <label
-                    className="text-gray-700 text-sm font-bold"
-                    htmlFor="transcriptUrl"
-                  >
-                    Transcript URL <span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="transcriptUrl"
-                    placeholder="Enter Transcript Url"
-                    value={formData.transcriptUrl}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                  />
-                </div>
-
+                <label
+                  className="text-gray-700 text-sm font-bold"
+                  htmlFor="transcriptUrl"
+                >
+                  Transcript URL <span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="transcriptUrl"
+                  placeholder="Enter Transcript Url"
+                  value={formData.transcriptUrl}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                />
+              </div>
 
               {/* Confirmation Modal */}
               <ConfirmationModal
