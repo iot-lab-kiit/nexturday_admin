@@ -19,6 +19,7 @@ export type ApiResponse = {
   paid?: boolean;
   price?: number;
   deadline?: string;
+  transcriptUrl?: string;
   images?: BackendImage[];
   details?: DetailType[];
 };
