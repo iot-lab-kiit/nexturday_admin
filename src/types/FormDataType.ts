@@ -9,7 +9,7 @@ export interface FormDataType {
   eventType: EventType;
   fromDate: string;
   toDate: string;
-  website?: string;
+  websiteUrl?: string;
   emails: string[];
   teamSize: number;
   contactNumbers: string[];
@@ -17,7 +17,7 @@ export interface FormDataType {
   isPaidEvent: boolean;
   isOutsideParticipantsAllowed: boolean;
   price?: number;
-  qr?: File;
+  paymentQrUrl?: string;
   deadline: string;
   eventTags: string;
   selectedFiles: File[];
@@ -25,5 +25,5 @@ export interface FormDataType {
   backendImages?: BackendImage[];
   imagesKeys?: string[];
   details: DetailType[];
-  transcriptUrl: string;
+  transcript: string;
 }

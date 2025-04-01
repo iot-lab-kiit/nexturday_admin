@@ -67,7 +67,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     eventTags: "",
     fromDate: "",
     toDate: "",
-    website: "",
+    websiteUrl: "",
     emails: [""],
     teamSize: 1,
     isOutsideParticipantsAllowed: false,
@@ -75,11 +75,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
-    qr: undefined,
+    paymentQrUrl: "",
     deadline: "",
     selectedFiles: [],
     // selectedDocs: [],
-    transcriptUrl: "",
+    transcript: "",
     backendImages: [],
     imagesKeys: [],
     details: [
@@ -103,6 +103,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const [loading, setloading] = useState(false);
   const [oneDay, setOneDay] = useState(false);
   const [qrFile, setQrFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -169,7 +170,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       eventType: apiData.type || "ONLINE",
       fromDate: formatDateForInput(apiData.from || ""),
       toDate: formatDateForInput(apiData.to || ""),
-      website: apiData.websiteUrl || "",
+      websiteUrl: apiData.websiteUrl || "",
       emails: apiData.emails || [""],
       teamSize: apiData.teamSize || 1,
       isOutsideParticipantsAllowed:
@@ -179,14 +180,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
       price: apiData.price || 0,
-      qr: apiData.qr
-        ? new File([apiData.qr], "qr-code.png", { type: "image/png" })
-        : undefined,
-      // qr: apiData.qr || null,
+      paymentQrUrl: apiData.paymentQrUrl || "",
       deadline: formatDateForInput(apiData.deadline || ""),
       selectedFiles: [],
       // selectedDocs: [],
-      transcriptUrl: apiData.transcriptUrl || "",
+      transcript: apiData.transcript || "",
       backendImages: apiData.images || [],
       details:
         apiData.details?.map((subEvent: DetailType) => ({
@@ -285,38 +283,23 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     }
   };
 
-  const handleQrChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    console.log("qr file", file);
+  // Handle Qr change
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      handleError("Please upload a valid image file.");
-      e.target.value = "";
-      return;
+  const handleQrChange = async (
+    e: React.ChangeEvent<HTMLInputElement>)=>{
+    const files = e.target.files;
+    if (!files) return;
+    console.log("Qr", files);
+    setQrFile(files[0]);
+    const fileUrl = URL.createObjectURL(files[0]);
+    console.log("Qr fileUrl", fileUrl);
+    setFileUrl(fileUrl);
+    setFormData((prev) => ({
+      ...prev,
+      paymentQrUrl: fileUrl,
+    }));
     }
-
-    // Compress the image
-    try {
-      const compressedFile = await imageCompression(file, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1024,
-        useWebWorker: true,
-      });
-
-      setQrFile(compressedFile);
-      setFormData((prev) => ({
-        ...prev,
-        qr: compressedFile,
-      })); // Update formData with the compressed QR code image
-    } catch (error) {
-      console.error("Compression failed:", error);
-      handleError("Failed to process the QR image.");
-    } finally {
-      e.target.value = ""; // Reset input
-    }
-  };
+    
 
   //For document upload
   // const handleDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -402,7 +385,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const handleRemoveQr = () => {
     setFormData((prev) => ({
       ...prev,
-      qr: undefined,
+      paymentQrUrl: "",
     }));
   };
 
@@ -590,11 +573,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       price,
       deadline,
       details,
-      website,
+      websiteUrl,
       registrationUrl,
       imagesKeys,
       backendImages,
-      transcriptUrl,
+      transcript,
     } = formData;
 
     if (
@@ -752,8 +735,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         );
       }
 
-      if (!website || !website.trim()) {
-        return handleError("Website URL is required for paid events!");
+      if (!websiteUrl || !websiteUrl.trim()) {
+        return handleError("websiteUrl URL is required for paid events!");
       }
 
       // if (!qrFile) {
@@ -765,7 +748,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       }
     }
 
-    if (!transcriptUrl) {
+    if (!transcript) {
       return handleError("Transcript URL is required!");
     }
 
@@ -773,11 +756,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     const formDataToSend = new FormData();
     formDataToSend.append("name", eventName);
     formDataToSend.append("about", about);
-    formDataToSend.append("websiteUrl", website || "");
+    formDataToSend.append("websiteUrl", websiteUrl || "");
     formDataToSend.append("registrationUrl", registrationUrl || "");
-    formDataToSend.append("transcriptUrl", transcriptUrl);
+    formDataToSend.append("transcript", transcript);
     formDataToSend.append("price", isPaidEvent ? String(price) : "0");
-    formDataToSend.append("qr", qrFile || "");
+    formDataToSend.append("paymentQrUrl", fileUrl || "");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
@@ -1323,7 +1306,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       <div className="flex items-center gap-4">
                         <button
                           type="button"
-                          onClick={() => document.getElementById("qr")?.click()}
+                          onClick={() => document.getElementById("paymentQrUrl")?.click()}
                           className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
                         >
                           <MdOutlineFileUpload size={20} />{" "}
@@ -1336,14 +1319,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       </div>
                       <input
                         type="file"
-                        id="qr"
+                        id="paymentQrUrl"
                         accept="image/*"
                         className="hidden"
                         multiple
                         onChange={(e) => handleQrChange(e)}
                       />
                       {/* Display Newly Uploaded QR Image */}
-                      {formData.qr && (
+                      {formData.paymentQrUrl && (
                         <div className="mt-4">
                           <p className="text-gray-700 text-sm font-semibold">
                             Newly Uploaded QR Images:
@@ -1351,7 +1334,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                             <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
                               <img
-                                src={qrFile ? URL.createObjectURL(qrFile) : ""}
+                                src={formData.paymentQrUrl}
                                 alt="Uploaded QR"
                                 className="w-full h-full object-cover"
                               />
@@ -1454,19 +1437,19 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   </select>
                 </div>
 
-                {/* Website */}
+                {/* websiteUrl */}
                 <div className="flex flex-col gap-2">
                   <label
                     className="text-gray-700 text-sm font-bold"
-                    htmlFor="website"
+                    htmlFor="websiteUrl"
                   >
-                    Website
+                    websiteUrl
                   </label>
                   <input
                     type="url"
-                    id="website"
-                    placeholder="Enter website URL"
-                    value={formData.website}
+                    id="websiteUrl"
+                    placeholder="Enter websiteUrl URL"
+                    value={formData.websiteUrl}
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                   />
@@ -1760,15 +1743,15 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
               <div className="flex flex-col gap-2">
                 <label
                   className="text-gray-700 text-sm font-bold"
-                  htmlFor="transcriptUrl"
+                  htmlFor="transcript"
                 >
                   Transcript URL <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
                   type="text"
-                  id="transcriptUrl"
+                  id="transcript"
                   placeholder="Enter Transcript Url"
-                  value={formData.transcriptUrl}
+                  value={formData.transcript}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                 />
