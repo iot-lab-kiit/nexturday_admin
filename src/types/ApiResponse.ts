@@ -11,8 +11,8 @@ export type ApiResponse = {
   to?: string;
   websiteUrl?: string;
   teamSize?: number;
-  isOutsideParticipantsAllowed?: boolean;
-  eventTags?: string;
+  isOutsideParticipantAllowed?: boolean;
+  tags: string[];
   emails?: string[];
   phoneNumbers?: string[];
   registrationUrl?: string;

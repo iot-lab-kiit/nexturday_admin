@@ -23,7 +23,7 @@ import {
   AddEventProps,
 } from "../../types";
 
-const availableTags = ["Tech", "Cultural", "Fun", "Workshop", "Hackathon"];
+const availableTags = ["Cultural", "Tech", "Fun", "Workshop", "Hackathon"];
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
@@ -64,13 +64,13 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     about: "",
     guidelines: [""],
     eventType: "ONLINE",
-    eventTags: "",
+    tags: [""],
     fromDate: "",
     toDate: "",
     websiteUrl: "",
     emails: [""],
     teamSize: 1,
-    isOutsideParticipantsAllowed: false,
+    isOutsideParticipantAllowed: false,
     contactNumbers: [""],
     registrationUrl: "",
     isPaidEvent: false,
@@ -173,9 +173,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       websiteUrl: apiData.websiteUrl || "",
       emails: apiData.emails || [""],
       teamSize: apiData.teamSize || 1,
-      isOutsideParticipantsAllowed:
-        apiData.isOutsideParticipantsAllowed || false,
-      eventTags: apiData.eventTags || "",
+      isOutsideParticipantAllowed: apiData.isOutsideParticipantAllowed || false,
+      tags: apiData.tags || "",
       contactNumbers: apiData.phoneNumbers || [""],
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
@@ -285,8 +284,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
   // Handle Qr change
 
-  const handleQrChange = async (
-    e: React.ChangeEvent<HTMLInputElement>)=>{
+  const handleQrChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     console.log("Qr", files);
@@ -298,8 +296,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       ...prev,
       paymentQrUrl: fileUrl,
     }));
-    }
-    
+  };
 
   //For document upload
   // const handleDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -383,6 +380,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   const handleRemoveQr = () => {
+    if (qrFile) {
+      URL.revokeObjectURL(fileUrl || "");
+    }
     setFormData((prev) => ({
       ...prev,
       paymentQrUrl: "",
@@ -760,15 +760,15 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     formDataToSend.append("registrationUrl", registrationUrl || "");
     formDataToSend.append("transcript", transcript);
     formDataToSend.append("price", isPaidEvent ? String(price) : "0");
-    formDataToSend.append("paymentQrUrl", fileUrl || "");
+    formDataToSend.append("paymentQr", "https://example.com/uploads/payment_qr.png");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
     formDataToSend.append(
-      "isOutsideParticipantsAllowed",
-      formData.isOutsideParticipantsAllowed.toString()
+      "isOutsideParticipantAllowed",
+      formData.isOutsideParticipantAllowed.toString()
     );
-    formDataToSend.append("teamSize", String(formData.teamSize));
+    formDataToSend.append("teamSize", formData.teamSize.toString());
     formDataToSend.append("type", eventType);
     formDataToSend.append(
       "deadline",
@@ -776,7 +776,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     );
 
     //add tags using
-    formDataToSend.append("tags[0]", "tech");
+    formDataToSend.append("tags[0]", JSON.stringify(formData.tags));
+    console.log("tags", formData.tags);
 
     const validEmails = formData.emails.filter((email) => email.trim());
     const validGuidelines = formData.guidelines.filter((g) => g.trim());
@@ -1306,7 +1307,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       <div className="flex items-center gap-4">
                         <button
                           type="button"
-                          onClick={() => document.getElementById("paymentQrUrl")?.click()}
+                          onClick={() =>
+                            document.getElementById("paymentQrUrl")?.click()
+                          }
                           className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
                         >
                           <MdOutlineFileUpload size={20} />{" "}
@@ -1398,13 +1401,13 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="isOutsideParticipantsAllowed"
-                    checked={formData.isOutsideParticipantsAllowed}
+                    id="isOutsideParticipantAllowed"
+                    checked={formData.isOutsideParticipantAllowed}
                     onChange={handleInputChange}
                     className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
                   />
                   <label
-                    htmlFor="isOutsideParticipantsAllowed"
+                    htmlFor="isOutsideParticipantAllowed"
                     className="text-gray-700 font-bold"
                   >
                     Is outside participants allowed?
@@ -1419,16 +1422,16 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
                   {/* Select dropdown for event tags */}
                   <select
-                    value={formData.eventTags}
+                    value={formData.tags[0] || ""}
                     onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
-                        eventTags: e.target.value,
+                        tags: [e.target.value], // Store the selected value as an array
                       }));
                     }}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                   >
-                    <option value="">Select an event tag</option>{" "}
+                    <option value="">Select an event tag</option>
                     {availableTags.map((tag) => (
                       <option key={tag} value={tag}>
                         {tag}

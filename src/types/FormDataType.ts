@@ -15,11 +15,11 @@ export interface FormDataType {
   contactNumbers: string[];
   registrationUrl?: string;
   isPaidEvent: boolean;
-  isOutsideParticipantsAllowed: boolean;
+  isOutsideParticipantAllowed: boolean;
   price?: number;
   paymentQrUrl?: string;
   deadline: string;
-  eventTags: string;
+  tags: string[];
   selectedFiles: File[];
   // selectedDocs: File[];
   backendImages?: BackendImage[];
