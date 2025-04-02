@@ -10,16 +10,16 @@ import AddEvent from "./components/Events/AddEvent.tsx";
 import EventPage from "./components/Events/EventPage.tsx";
 import EventDetails from "./components/Events/EventDetails.tsx";
 import ParticipantsTable from "./components/Participants/ParticipantsTable.tsx";
-import {ChatSection} from "./components/Chats/Chatsection.tsx";
-
 // import EditEvent from "./components/Events/EditEvent.tsx";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/Global/ProtectedRoute.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
-// import Chatsection from "./components/Chats/Chatsection.tsx";
-
-
-
+import EventsPending from "./components/EventsPending.tsx";
+import MasterAdminLayout from "./components/MasterAdminLayout.tsx";
+import EventsChecked from "./components/EventsChecked.tsx";
+import MasterAdminEventDetails from "./components/MasterAdminEventDetails.tsx";
+import MasterAdminParticipantsTable from "./components/MasterAdminParticipantsTable.tsx";
+import { ChatSection } from "./components/Chats/ChatSection.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -92,9 +92,7 @@ createRoot(document.getElementById("root")!).render(
               </ProtectedRoute>
             }
           />
-
-
-            <Route
+          <Route
   path="/events/:id/chat"
   element={
     <ProtectedRoute>
@@ -104,13 +102,26 @@ createRoot(document.getElementById("root")!).render(
     </ProtectedRoute>
   }
 />
+        
+          <Route path="/master-admin" element={<MasterAdminLayout />}>
+            <Route
+              path="/master-admin/pending-events"
+              element={<EventsPending />}
+            />
+
+            <Route
+              path="/master-admin/checked-events"
+              element={<EventsChecked />}
+            />
+            <Route path="/master-admin/events/:id" element={<MasterAdminEventDetails />} />
+            <Route
+              path="/master-admin/events/:id/participants"
+              element={<MasterAdminParticipantsTable />}
+            />
+            {/* <Route path="master-admin/events/:id" element={<EventDetails />} /> */}
+          </Route>
         </Routes>
-      
-
-
-
       </AuthProvider>
-   
     </BrowserRouter>
   </StrictMode>
 );
