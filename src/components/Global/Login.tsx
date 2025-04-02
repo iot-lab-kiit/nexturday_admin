@@ -7,13 +7,25 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { loginSociety } from "@/api/authApi";
 import { updateMetadata } from "@/utils/metadata";
 import { useAuth } from "@/context/AuthContext";
+
 const schema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string(),
 });
+
 type FormData = z.infer<typeof schema>;
-function Login() {
-  const helpdeskEmail="helpdesk@nexterday.com";
+
+const decodeJWT = (token: string) => {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
+};
+
+const Login = () => {
+  const helpdeskEmail = "helpdesk@nexterday.com";
   const [clicked, setClicked] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -27,6 +39,7 @@ function Login() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
   useEffect(() => {
     updateMetadata({
       title: "Login",
@@ -34,6 +47,7 @@ function Login() {
       keywords: "login, admin, nexturday, dashboard",
     });
   }, []);
+
   const handleLogin: SubmitHandler<FormData> = async (data) => {
     setClicked(true);
     setErrorMessage("");
@@ -42,8 +56,14 @@ function Login() {
       if (response.status === 201) {
         const token = response.data.data.accessToken;
         login(token);
-        const from = (location.state as any)?.from?.pathname || "/update-profile";
-        navigate(from, { replace: true });
+
+        const decodedToken = decodeJWT(token);
+        if (decodedToken.role === "ADMIN") {
+          navigate("/master-admin", { replace: true });
+        } else {
+          const from = (location.state as any)?.from?.pathname || "/update-profile";
+          navigate(from, { replace: true });
+        }
       } else {
         console.error("Error logging in");
         setErrorMessage("Some error occurred. Try again.");

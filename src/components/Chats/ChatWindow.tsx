@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { IoMdPerson } from "react-icons/io";
 import { useParams } from "react-router";
 import { getDocs } from "firebase/firestore";
-import { snapshot } from "node:test";
 
 type Message = {
   id: string;
@@ -30,7 +29,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [announcements , setAnnouncements] = useState<Announcement[]>([]);
 
   // Auto-scroll to the latest message
   useEffect(() => {

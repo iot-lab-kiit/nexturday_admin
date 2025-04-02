@@ -1,6 +1,7 @@
 import api from "@/api/api_instance";
+import axios from "axios";
 
-export const getEvents = async (page:number) => {
+export const getEvents = async (page: number) => {
   try {
     const response = await api.get("/api/events/society", {
       params: {
@@ -13,6 +14,97 @@ export const getEvents = async (page:number) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching events:", error);
+    throw error;
+  }
+};
+
+export const getAllEvents = async (page: number) => {
+  try {
+    const response = await api.get("/api/admin/events", {
+      params: {
+        page: page,
+        field: "createdAt",
+        direction: "desc",
+      },
+    });
+    // console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    throw error;
+  }
+};
+
+export const rejectEvent = async (id: string) => {
+  try {
+    const response = await axios.patch(
+      `${import.meta.env.VITE_BASE_URL}/api/admin/event/reject/${id}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+        },
+      }
+    );
+    console.log(response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Error rejecting event:", error);
+    throw error;
+  }
+};
+
+export const approveEvent = async (id: string) => {
+  try {
+    const response = await axios.patch(
+      `${import.meta.env.VITE_BASE_URL}/api/admin/event/approve/${id}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("societyToken")}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error approving event:", error);
+    throw error;
+  }
+};
+
+export const getPendingEvents = async (page: number) => {
+  try {
+    const response = await api.get("/api/admin/events", {
+      params: {
+        page: page,
+        field: "createdAt",
+        direction: "desc",
+        isApproved: false,
+      },
+    });
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pending events:", error);
+    throw error;
+  }
+};
+
+export const getApprovedEvents = async (page: number) => {
+  try {
+    const response = await api.get("/api/admin/events", {
+      params: {
+        page: page,
+        field: "createdAt",
+        direction: "desc",
+        isApproved: true,
+      },
+    });
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching checked events:", error);
     throw error;
   }
 };
