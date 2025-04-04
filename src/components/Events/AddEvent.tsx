@@ -69,7 +69,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     toDate: "",
     websiteUrl: "",
     emails: [""],
-    teamSize: 1,
+    maxTeamSize: 1,
     isOutsideParticipantAllowed: false,
     contactNumbers: [""],
     registrationUrl: "",
@@ -172,7 +172,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       toDate: formatDateForInput(apiData.to || ""),
       websiteUrl: apiData.websiteUrl || "",
       emails: apiData.emails || [""],
-      teamSize: apiData.teamSize || 1,
+      maxTeamSize: apiData.maxTeamSize || 1,
       isOutsideParticipantAllowed: apiData.isOutsideParticipantAllowed || false,
       tags: apiData.tags || "",
       contactNumbers: apiData.phoneNumbers || [""],
@@ -578,6 +578,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       imagesKeys,
       backendImages,
       transcript,
+      maxTeamSize,
     } = formData;
 
     if (
@@ -587,6 +588,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       !fromDate.trim() ||
       !toDate.trim() ||
       !deadline.trim() ||
+      !maxTeamSize ||
       guidelines.some((g) => !g.trim()) ||
       emails.some((email) => !email.trim()) ||
       contactNumbers.some((number) => !number.trim())
@@ -768,7 +770,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       "isOutsideParticipantAllowed",
       formData.isOutsideParticipantAllowed.toString()
     );
-    formDataToSend.append("teamSize", formData.teamSize.toString());
+    // formDataToSend.append("maxTeamSize", maxTeamSize.toString());
     formDataToSend.append("type", eventType);
     formDataToSend.append(
       "deadline",
@@ -817,6 +819,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     // Show loader toast
     const toastId = toast.loading("Submitting form...");
 
+    console.log(typeof maxTeamSize, maxTeamSize);
     console.log("formdata", formData);
     console.log("formdatatosend", formDataToSend);
     try {
@@ -1247,14 +1250,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 <div className="flex flex-col gap-2">
                   <label
                     className="text-gray-700 text-sm font-bold"
-                    htmlFor="teamSize"
+                    htmlFor="maxTeamSize"
                   >
                     Team Size <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     type="number"
-                    id="teamSize"
-                    value={formData.teamSize}
+                    id="maxTeamSize"
+                    value={formData.maxTeamSize}
                     onChange={handleInputChange}
                     placeholder="Enter team size"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"

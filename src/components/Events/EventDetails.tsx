@@ -19,6 +19,7 @@ interface Event {
   name: string;
   paid: boolean;
   participationCount: number;
+  maxTeamSize: number;
   phoneNumbers: string[];
   price: number;
   registrationUrl: string;
@@ -251,6 +252,7 @@ const EventDetails = () => {
             <div className="space-y-2">
               <p>Entry Fee: {event.paid ? `₹${event.price}` : "Free"}</p>
               <p>Participants: {event.participationCount}</p>
+              <p>Team size: {event.maxTeamSize}</p>
               {/* <p>Outside Participant: {event.isOutsideParticipantAllowed}</p> */}
               {/* {event.isOutsideParticipantAllowed === "false" ? (
                 <p>Outside Participant is not allowed</p>
@@ -275,6 +277,7 @@ const EventDetails = () => {
                   </a>
                 </p>
               )}
+
             </div>
           </div>
 

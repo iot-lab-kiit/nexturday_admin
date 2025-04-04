@@ -10,7 +10,7 @@ export type ApiResponse = {
   from?: string;
   to?: string;
   websiteUrl?: string;
-  teamSize?: number;
+  maxTeamSize?: number;
   isOutsideParticipantAllowed?: boolean;
   tags: string[];
   emails?: string[];

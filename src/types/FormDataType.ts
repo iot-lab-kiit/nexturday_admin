@@ -11,7 +11,7 @@ export interface FormDataType {
   toDate: string;
   websiteUrl?: string;
   emails: string[];
-  teamSize: number;
+  maxTeamSize: number;
   contactNumbers: string[];
   registrationUrl?: string;
   isPaidEvent: boolean;
