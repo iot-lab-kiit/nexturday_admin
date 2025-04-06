@@ -75,7 +75,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
-    paymentQrUrl: "",
+    paymentQr: [],
     deadline: "",
     selectedFiles: [],
     // selectedDocs: [],
@@ -126,6 +126,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
           setOneDay(toDate === fromDate);
           setFormData(transformedData);
+          console.log("transformedData",transformedData)
         } catch (error) {
           console.error("Error fetching event data:", error);
           toast.error("Failed to load event data for editing.");
@@ -179,7 +180,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
       price: apiData.price || 0,
-      paymentQrUrl: apiData.paymentQrUrl || "",
+      paymentQr: Array.isArray(apiData.paymentQr) ? apiData.paymentQr : [],
       deadline: formatDateForInput(apiData.deadline || ""),
       selectedFiles: [],
       // selectedDocs: [],
@@ -294,7 +295,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     setFileUrl(fileUrl);
     setFormData((prev) => ({
       ...prev,
-      paymentQrUrl: fileUrl,
+      paymentQr: [fileUrl as unknown as File], // Wrap fileUrl in an array and cast it to File
     }));
   };
 
@@ -385,7 +386,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     }
     setFormData((prev) => ({
       ...prev,
-      paymentQrUrl: "",
+      paymentQr: [],
     }));
   };
 
@@ -1311,7 +1312,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                         <button
                           type="button"
                           onClick={() =>
-                            document.getElementById("paymentQrUrl")?.click()
+                            document.getElementById("paymentQr")?.click()
                           }
                           className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
                         >
@@ -1325,14 +1326,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                       </div>
                       <input
                         type="file"
-                        id="paymentQrUrl"
+                        id="paymentQr"
                         accept="image/*"
                         className="hidden"
                         multiple
                         onChange={(e) => handleQrChange(e)}
                       />
                       {/* Display Newly Uploaded QR Image */}
-                      {formData.paymentQrUrl && (
+                      {formData.paymentQr && (
                         <div className="mt-4">
                           <p className="text-gray-700 text-sm font-semibold">
                             Newly Uploaded QR Images:
@@ -1340,7 +1341,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                           <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                             <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
                               <img
-                                src={formData.paymentQrUrl}
+                                src={fileUrl!}
                                 alt="Uploaded QR"
                                 className="w-full h-full object-cover"
                               />

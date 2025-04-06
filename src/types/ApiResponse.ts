@@ -18,7 +18,7 @@ export type ApiResponse = {
   registrationUrl?: string;
   paid?: boolean;
   price?: number;
-  paymentQrUrl?: string;
+  paymentQr?: string;
   deadline?: string;
   transcript?: string;
   images?: BackendImage[];

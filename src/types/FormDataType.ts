@@ -17,7 +17,7 @@ export interface FormDataType {
   isPaidEvent: boolean;
   isOutsideParticipantAllowed: boolean;
   price?: number;
-  paymentQrUrl?: string;
+  paymentQr?: File[];
   deadline: string;
   tags: string[];
   selectedFiles: File[];
