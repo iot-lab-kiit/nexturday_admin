@@ -762,7 +762,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     formDataToSend.append("registrationUrl", registrationUrl || "");
     formDataToSend.append("transcript", transcript);
     formDataToSend.append("price", isPaidEvent ? String(price) : "0");
-    formDataToSend.append("paymentQr", "https://example.com/uploads/payment_qr.png");
+    formDataToSend.append("paymentQr", qrFile || "");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
@@ -770,7 +770,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       "isOutsideParticipantAllowed",
       formData.isOutsideParticipantAllowed.toString()
     );
-    // formDataToSend.append("maxTeamSize", maxTeamSize.toString());
+    formDataToSend.append("maxTeamSize", maxTeamSize.toString());
     formDataToSend.append("type", eventType);
     formDataToSend.append(
       "deadline",
