@@ -23,7 +23,7 @@ import {
   AddEventProps,
 } from "../../types";
 
-const availableTags = ["Tech", "Cultural", "Fun", "Workshop", "Hackathon"];
+const availableTags = ["Cultural", "Tech", "Fun", "Workshop", "Hackathon"];
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
@@ -64,21 +64,22 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     about: "",
     guidelines: [""],
     eventType: "ONLINE",
-    eventTags: "",
+    tags: [""],
     fromDate: "",
     toDate: "",
-    website: "",
+    websiteUrl: "",
     emails: [""],
-    teamSize: 1,
-    isOutsideParticipantsAllowed: false,
+    maxTeamSize: 1,
+    isOutsideParticipantAllowed: false,
     contactNumbers: [""],
     registrationUrl: "",
     isPaidEvent: false,
     price: 0,
+    paymentQr: [],
     deadline: "",
     selectedFiles: [],
     // selectedDocs: [],
-    transcriptUrl: "",
+    transcript: "",
     backendImages: [],
     imagesKeys: [],
     details: [
@@ -101,6 +102,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setloading] = useState(false);
   const [oneDay, setOneDay] = useState(false);
+  const [qrFile, setQrFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -122,6 +126,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
           setOneDay(toDate === fromDate);
           setFormData(transformedData);
+          console.log("transformedData",transformedData)
         } catch (error) {
           console.error("Error fetching event data:", error);
           toast.error("Failed to load event data for editing.");
@@ -166,20 +171,20 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       eventType: apiData.type || "ONLINE",
       fromDate: formatDateForInput(apiData.from || ""),
       toDate: formatDateForInput(apiData.to || ""),
-      website: apiData.websiteUrl || "",
+      websiteUrl: apiData.websiteUrl || "",
       emails: apiData.emails || [""],
-      teamSize: apiData.teamSize || 1,
-      isOutsideParticipantsAllowed:
-        apiData.isOutsideParticipantsAllowed || false,
-      eventTags: apiData.eventTags || "",
+      maxTeamSize: apiData.maxTeamSize || 1,
+      isOutsideParticipantAllowed: apiData.isOutsideParticipantAllowed || false,
+      tags: apiData.tags || "",
       contactNumbers: apiData.phoneNumbers || [""],
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
       price: apiData.price || 0,
+      paymentQr: Array.isArray(apiData.paymentQr) ? apiData.paymentQr : [],
       deadline: formatDateForInput(apiData.deadline || ""),
       selectedFiles: [],
       // selectedDocs: [],
-      transcriptUrl: apiData.transcriptUrl || "",
+      transcript: apiData.transcript || "",
       backendImages: apiData.images || [],
       details:
         apiData.details?.map((subEvent: DetailType) => ({
@@ -215,7 +220,10 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     const { id, value, type } = e.target;
 
     // Handle checkbox inputs
-    const checked = type === "checkbox" && e.target instanceof HTMLInputElement ? e.target.checked : false;
+    const checked =
+      type === "checkbox" && e.target instanceof HTMLInputElement
+        ? e.target.checked
+        : false;
 
     // Handle file inputs
     const file =
@@ -232,6 +240,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+
+    console.log("event file", files);
 
     const newFiles = Array.from(files);
     const currentFiles = formData.selectedFiles;
@@ -271,6 +281,22 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     } finally {
       e.target.value = ""; // Reset input value
     }
+  };
+
+  // Handle Qr change
+
+  const handleQrChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    console.log("Qr", files);
+    setQrFile(files[0]);
+    const fileUrl = URL.createObjectURL(files[0]);
+    console.log("Qr fileUrl", fileUrl);
+    setFileUrl(fileUrl);
+    setFormData((prev) => ({
+      ...prev,
+      paymentQr: [fileUrl as unknown as File], // Wrap fileUrl in an array and cast it to File
+    }));
   };
 
   //For document upload
@@ -352,6 +378,16 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         };
       });
     }
+  };
+
+  const handleRemoveQr = () => {
+    if (qrFile) {
+      URL.revokeObjectURL(fileUrl || "");
+    }
+    setFormData((prev) => ({
+      ...prev,
+      paymentQr: [],
+    }));
   };
 
   //Remove document
@@ -538,11 +574,12 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       price,
       deadline,
       details,
-      website,
+      websiteUrl,
       registrationUrl,
       imagesKeys,
       backendImages,
-      transcriptUrl
+      transcript,
+      maxTeamSize,
     } = formData;
 
     if (
@@ -552,6 +589,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       !fromDate.trim() ||
       !toDate.trim() ||
       !deadline.trim() ||
+      !maxTeamSize ||
       guidelines.some((g) => !g.trim()) ||
       emails.some((email) => !email.trim()) ||
       contactNumbers.some((number) => !number.trim())
@@ -700,16 +738,20 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
         );
       }
 
-      if (!website || !website.trim()) {
-        return handleError("Website URL is required for paid events!");
+      if (!websiteUrl || !websiteUrl.trim()) {
+        return handleError("websiteUrl URL is required for paid events!");
       }
+
+      // if (!qrFile) {
+      //   return handleError("QR code is required for paid events!");
+      // }
 
       if (!registrationUrl || !registrationUrl.trim()) {
         return handleError("Registration URL is required for paid events!");
       }
     }
 
-    if(!transcriptUrl){
+    if (!transcript) {
       return handleError("Transcript URL is required!");
     }
 
@@ -717,23 +759,28 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     const formDataToSend = new FormData();
     formDataToSend.append("name", eventName);
     formDataToSend.append("about", about);
-    formDataToSend.append("websiteUrl", website || "");
+    formDataToSend.append("websiteUrl", websiteUrl || "");
     formDataToSend.append("registrationUrl", registrationUrl || "");
-    formDataToSend.append("transcriptUrl", transcriptUrl);
+    formDataToSend.append("transcript", transcript);
     formDataToSend.append("price", isPaidEvent ? String(price) : "0");
+    formDataToSend.append("paymentQr", qrFile || "");
     formDataToSend.append("from", fromISO);
     formDataToSend.append("to", toISO);
     formDataToSend.append("paid", isPaidEvent.toString());
-    formDataToSend.append("isOutsideParticipantsAllowed", formData.isOutsideParticipantsAllowed.toString());
-    formDataToSend.append("teamSize", String(formData.teamSize));
+    formDataToSend.append(
+      "isOutsideParticipantAllowed",
+      formData.isOutsideParticipantAllowed.toString()
+    );
+    formDataToSend.append("maxTeamSize", maxTeamSize.toString());
     formDataToSend.append("type", eventType);
     formDataToSend.append(
       "deadline",
       new Date(formData.deadline).toISOString()
     );
 
-    //add tags using 
-    formDataToSend.append("tags[0]", "tech");
+    //add tags using
+    formDataToSend.append("tags[0]", JSON.stringify(formData.tags));
+    console.log("tags", formData.tags);
 
     const validEmails = formData.emails.filter((email) => email.trim());
     const validGuidelines = formData.guidelines.filter((g) => g.trim());
@@ -773,6 +820,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     // Show loader toast
     const toastId = toast.loading("Submitting form...");
 
+    console.log(typeof maxTeamSize, maxTeamSize);
     console.log("formdata", formData);
     console.log("formdatatosend", formDataToSend);
     try {
@@ -1203,14 +1251,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 <div className="flex flex-col gap-2">
                   <label
                     className="text-gray-700 text-sm font-bold"
-                    htmlFor="teamSize"
+                    htmlFor="maxTeamSize"
                   >
                     Team Size <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     type="number"
-                    id="teamSize"
-                    value={formData.teamSize}
+                    id="maxTeamSize"
+                    value={formData.maxTeamSize}
                     onChange={handleInputChange}
                     placeholder="Enter team size"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
@@ -1253,6 +1301,65 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                         placeholder="Enter price"
                         className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                       />
+
+                      {/* Upload Qr image */}
+
+                      <label className="text-gray-700 text-sm font-bold">
+                        Uoload QR for payment{" "}
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            document.getElementById("paymentQr")?.click()
+                          }
+                          className="bg-blue-500 flex items-center justify-center gap-2 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
+                        >
+                          <MdOutlineFileUpload size={20} />{" "}
+                          <span>Upload Images</span>
+                        </button>
+                        <span className="text-gray-500 text-sm">
+                          (You can upload a maximum of 1 image of ideally 1X1
+                          ratio.)
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        id="paymentQr"
+                        accept="image/*"
+                        className="hidden"
+                        multiple
+                        onChange={(e) => handleQrChange(e)}
+                      />
+                      {/* Display Newly Uploaded QR Image */}
+                      {formData.paymentQr && (
+                        <div className="mt-4">
+                          <p className="text-gray-700 text-sm font-semibold">
+                            Newly Uploaded QR Images:
+                          </p>
+                          <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
+                              <img
+                                src={fileUrl!}
+                                alt="Uploaded QR"
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQrFile(null);
+                                  handleRemoveQr();
+                                }}
+                                className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                                aria-label="Remove QR image"
+                              >
+                                <MdDelete size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1298,13 +1405,13 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="isOutsideParticipantsAllowed"
-                    checked={formData.isOutsideParticipantsAllowed}
+                    id="isOutsideParticipantAllowed"
+                    checked={formData.isOutsideParticipantAllowed}
                     onChange={handleInputChange}
                     className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
                   />
                   <label
-                    htmlFor="isOutsideParticipantsAllowed"
+                    htmlFor="isOutsideParticipantAllowed"
                     className="text-gray-700 font-bold"
                   >
                     Is outside participants allowed?
@@ -1319,16 +1426,16 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
                   {/* Select dropdown for event tags */}
                   <select
-                    value={formData.eventTags}
+                    value={formData.tags[0] || ""}
                     onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
-                        eventTags: e.target.value,
+                        tags: [e.target.value], // Store the selected value as an array
                       }));
                     }}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                   >
-                    <option value="">Select an event tag</option>{" "}
+                    <option value="">Select an event tag</option>
                     {availableTags.map((tag) => (
                       <option key={tag} value={tag}>
                         {tag}
@@ -1337,19 +1444,19 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   </select>
                 </div>
 
-                {/* Website */}
+                {/* websiteUrl */}
                 <div className="flex flex-col gap-2">
                   <label
                     className="text-gray-700 text-sm font-bold"
-                    htmlFor="website"
+                    htmlFor="websiteUrl"
                   >
-                    Website
+                    websiteUrl
                   </label>
                   <input
                     type="url"
-                    id="website"
-                    placeholder="Enter website URL"
-                    value={formData.website}
+                    id="websiteUrl"
+                    placeholder="Enter websiteUrl URL"
+                    value={formData.websiteUrl}
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
                   />
@@ -1641,22 +1748,21 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
               {/* transcript url input */}
               <div className="flex flex-col gap-2">
-                  <label
-                    className="text-gray-700 text-sm font-bold"
-                    htmlFor="transcriptUrl"
-                  >
-                    Transcript URL <span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="transcriptUrl"
-                    placeholder="Enter Transcript Url"
-                    value={formData.transcriptUrl}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                  />
-                </div>
-
+                <label
+                  className="text-gray-700 text-sm font-bold"
+                  htmlFor="transcript"
+                >
+                  Transcript URL <span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="transcript"
+                  placeholder="Enter Transcript Url"
+                  value={formData.transcript}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                />
+              </div>
 
               {/* Confirmation Modal */}
               <ConfirmationModal
