@@ -25,7 +25,7 @@ interface Event {
   registrationUrl: string;
   websiteUrl: string;
   transcript: string;
-  paymentQrUrl: string;
+  paymentQr: string;
   tags: string[];
   society: {
     name: string;
@@ -185,10 +185,16 @@ const EventDetails = () => {
             </p>
 
             <p className="text-gray-700">
-  <span className="text-gray-900 font-medium">Event Type: </span>
-  {event.tags.join(', ')}
-</p>
-
+              <span className="text-gray-900 font-medium">Event Type: </span>
+              {event.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-block mr-2 px-2.5 py-0.5 rounded"
+                >
+                  {tag}
+                </span>
+              ))}
+            </p>
           </div>
 
           <div className="bg-gray-50 rounded-lg p-4">
@@ -226,15 +232,12 @@ const EventDetails = () => {
                 </svg>
                 {event.phoneNumbers.join(", ")}
               </p>
-              {
-                event.websiteUrl && (
-                  <p className="flex items-center gap-2">
-                    <MdComputer className="w-5 h-5 text-gray-600" />
-                    {event.websiteUrl}
-                    </p>
-                )
-                
-              }
+              {event.websiteUrl && (
+                <p className="flex items-center gap-2">
+                  <MdComputer className="w-5 h-5 text-gray-600" />
+                  {event.websiteUrl}
+                </p>
+              )}
             </div>
           </div>
 
@@ -278,6 +281,17 @@ const EventDetails = () => {
                 </p>
               )}
 
+              {/* Display qr image */}
+              {event.paymentQr && (
+                <div className="flex items-center gap-2">
+                  <p>Payment QR Code:</p>
+                  <img
+                    src={event.paymentQr}
+                    alt="Payment QR Code"
+                    className="w-40 h-40 rounded-md"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

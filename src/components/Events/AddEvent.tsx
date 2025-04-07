@@ -64,7 +64,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     about: "",
     guidelines: [""],
     eventType: "ONLINE",
-    tags: [""],
+    tags: [],
     fromDate: "",
     toDate: "",
     websiteUrl: "",
@@ -125,8 +125,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
             .split("T")[0];
 
           setOneDay(toDate === fromDate);
+          //set tags
+          const tagsArray = transformedData.tags;
+          setFormData((prev) => ({
+            ...prev,
+            tags: tagsArray,
+          }));
           setFormData(transformedData);
-          console.log("transformedData",transformedData)
+          console.log("transformedData", transformedData);
         } catch (error) {
           console.error("Error fetching event data:", error);
           toast.error("Failed to load event data for editing.");
@@ -136,6 +142,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       };
 
       fetchEventById(id);
+      console.log(formData);
     }
   }, [id, isEditing]);
 
@@ -381,9 +388,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   const handleRemoveQr = () => {
-    if (qrFile) {
-      URL.revokeObjectURL(fileUrl || "");
-    }
+    setQrFile(null);
+    setFileUrl(null);
     setFormData((prev) => ({
       ...prev,
       paymentQr: [],
@@ -778,8 +784,12 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       new Date(formData.deadline).toISOString()
     );
 
-    //add tags using
-    formDataToSend.append("tags[0]", JSON.stringify(formData.tags));
+    // formDataToSend.append("tags[0]", formData.tags.toString());
+    // formDataToSend.set("tags[0]", formData.tags.join(","));
+    // formDataToSend.append("tags[0]", formData.tags.join(","));
+    formDataToSend.set("tags[0]", formData.tags.join(","));
+
+
     console.log("tags", formData.tags);
 
     const validEmails = formData.emails.filter((email) => email.trim());
@@ -1339,24 +1349,25 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                             Newly Uploaded QR Images:
                           </p>
                           <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                            <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
-                              <img
-                                src={fileUrl!}
-                                alt="Uploaded QR"
-                                className="w-full h-full object-cover"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setQrFile(null);
-                                  handleRemoveQr();
-                                }}
-                                className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
-                                aria-label="Remove QR image"
-                              >
-                                <MdDelete size={18} />
-                              </button>
-                            </div>
+                            {fileUrl && (
+                              <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
+                                <img
+                                  src={fileUrl!}
+                                  alt="Uploaded QR"
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleRemoveQr();
+                                  }}
+                                  className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                                  aria-label="Remove QR image"
+                                >
+                                  <MdDelete size={18} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1420,37 +1431,43 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
                 {/* Event tags */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-gray-700 text-sm font-bold">
+                  <label className="text-gray-700 text-md font-bold">
                     Event Tags
                   </label>
 
-                  {/* Select dropdown for event tags */}
-                  <select
-                    value={formData.tags[0] || ""}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        tags: [e.target.value], // Store the selected value as an array
-                      }));
-                    }}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                  >
-                    <option value="">Select an event tag</option>
+                  <div className="flex flex-wrap gap-2">
                     {availableTags.map((tag) => (
-                      <option key={tag} value={tag}>
-                        {tag}
-                      </option>
+                      <label key={tag} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          value={tag}
+                          checked={formData.tags.includes(tag)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setFormData((prev) => {
+                              const tags = checked
+                                ? [...prev.tags, tag]
+                                : prev.tags.filter((t) => t !== tag);
+                              return { ...prev, tags };
+                            });
+                          }}
+                        />
+                        <span className="text-sm">{tag}</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
 
                 {/* websiteUrl */}
                 <div className="flex flex-col gap-2">
                   <label
-                    className="text-gray-700 text-sm font-bold"
+                    className="text-gray-700 text-sm font-bold flex items-center gap-1"
                     htmlFor="websiteUrl"
                   >
-                    websiteUrl
+                    Website Url
+                    {formData.isPaidEvent && (
+                      <span className="text-red-500">*</span>
+                    )}
                   </label>
                   <input
                     type="url"
