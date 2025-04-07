@@ -160,3 +160,18 @@ export const CreateEvent = async (formData: FormData) => {
     throw error;
   }
 };
+
+export const updatePaymentStatus = async (
+  teamId: string,
+  paymentStatus: string
+) => {
+  try {
+    const response = await api.post(`/api/events/${teamId}/payment-status`, {
+      paymentStatus,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    throw error;
+  }
+};

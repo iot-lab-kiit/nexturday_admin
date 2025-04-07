@@ -18,7 +18,7 @@ interface Event {
   images: { url: string }[];
   name: string;
   paid: boolean;
-  participationCount: number;
+  teamCount: number;
   maxTeamSize: number;
   phoneNumbers: string[];
   price: number;
@@ -251,7 +251,7 @@ const EventDetails = () => {
             <h2 className="text-xl font-semibold mb-3">Registration Details</h2>
             <div className="space-y-2">
               <p>Entry Fee: {event.paid ? `₹${event.price}` : "Free"}</p>
-              <p>Participants: {event.participationCount}</p>
+              <p>Participants: {event.teamCount}</p>
               <p>Team size: {event.maxTeamSize}</p>
               {/* <p>Outside Participant: {event.isOutsideParticipantAllowed}</p> */}
               {/* {event.isOutsideParticipantAllowed === "false" ? (
