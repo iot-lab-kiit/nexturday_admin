@@ -64,7 +64,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     about: "",
     guidelines: [""],
     eventType: "ONLINE",
-    tags: [""],
+    tags: [],
     fromDate: "",
     toDate: "",
     websiteUrl: "",
@@ -125,8 +125,14 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
             .split("T")[0];
 
           setOneDay(toDate === fromDate);
+          //set tags
+          const tagsArray = transformedData.tags;
+          setFormData((prev) => ({
+            ...prev,
+            tags: tagsArray,
+          }));
           setFormData(transformedData);
-          console.log("transformedData",transformedData)
+          console.log("transformedData", transformedData);
         } catch (error) {
           console.error("Error fetching event data:", error);
           toast.error("Failed to load event data for editing.");
@@ -136,6 +142,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       };
 
       fetchEventById(id);
+      console.log(formData);
     }
   }, [id, isEditing]);
 
@@ -175,7 +182,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       emails: apiData.emails || [""],
       maxTeamSize: apiData.maxTeamSize || 1,
       isOutsideParticipantAllowed: apiData.isOutsideParticipantAllowed || false,
-      tags: apiData.tags || "",
+      tags: apiData.tags || [""],
       contactNumbers: apiData.phoneNumbers || [""],
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
@@ -381,9 +388,8 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
   };
 
   const handleRemoveQr = () => {
-    if (qrFile) {
-      URL.revokeObjectURL(fileUrl || "");
-    }
+    setQrFile(null);
+    setFileUrl(null);
     setFormData((prev) => ({
       ...prev,
       paymentQr: [],
@@ -480,6 +486,13 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     }));
   };
 
+  const handleTagChange = (newTags: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: newTags,
+    }));
+  };
+
   const handleRemoveEmail = (index: number) => {
     const updatedEmails = formData.emails.filter((_, i) => i !== index);
     setFormData((prev) => ({
@@ -566,6 +579,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       about,
       guidelines,
       eventType,
+      tags,
       fromDate,
       toDate,
       emails,
@@ -755,6 +769,10 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       return handleError("Transcript URL is required!");
     }
 
+    if (!tags || tags.length === 0) {
+      return handleError("At least one tag is required!");
+    }
+
     // Create FormData
     const formDataToSend = new FormData();
     formDataToSend.append("name", eventName);
@@ -778,8 +796,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       new Date(formData.deadline).toISOString()
     );
 
-    //add tags using
-    formDataToSend.append("tags[0]", JSON.stringify(formData.tags));
+    // formDataToSend.append("tags[0]", formData.tags.toString());
+    // formDataToSend.set("tags[0]", formData.tags.join(","));
+    // formDataToSend.append("tags[0]", formData.tags.join(","));
+    formDataToSend.set("tags[0]", formData.tags.join(","));
+
     console.log("tags", formData.tags);
 
     const validEmails = formData.emails.filter((email) => email.trim());
@@ -789,6 +810,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     validEmails.forEach((email, index) => {
       formDataToSend.append(`emails[${index}]`, email);
     });
+    // tags.forEach((tag, index) => {
+    //   formDataToSend.append(`tags[${index}]`, tag);
+    // });
     validGuidelines.forEach((g, index) =>
       formDataToSend.append(`guidlines[${index}]`, g)
     );
@@ -1339,24 +1363,25 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                             Newly Uploaded QR Images:
                           </p>
                           <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                            <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
-                              <img
-                                src={fileUrl!}
-                                alt="Uploaded QR"
-                                className="w-full h-full object-cover"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setQrFile(null);
-                                  handleRemoveQr();
-                                }}
-                                className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
-                                aria-label="Remove QR image"
-                              >
-                                <MdDelete size={18} />
-                              </button>
-                            </div>
+                            {fileUrl && (
+                              <div className="relative border rounded-lg overflow-hidden group w-40 h-40">
+                                <img
+                                  src={fileUrl!}
+                                  alt="Uploaded QR"
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleRemoveQr();
+                                  }}
+                                  className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
+                                  aria-label="Remove QR image"
+                                >
+                                  <MdDelete size={18} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1420,37 +1445,48 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
 
                 {/* Event tags */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-gray-700 text-sm font-bold">
+                  <label className="text-gray-700 text-md font-bold">
                     Event Tags
                   </label>
 
-                  {/* Select dropdown for event tags */}
-                  <select
-                    value={formData.tags[0] || ""}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        tags: [e.target.value], // Store the selected value as an array
-                      }));
-                    }}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
-                  >
-                    <option value="">Select an event tag</option>
-                    {availableTags.map((tag) => (
-                      <option key={tag} value={tag}>
+                  <div className="flex flex-wrap gap-2">
+                    {availableTags.map((tag: string) => (
+                      <label
+                        key={tag}
+                        className="flex items-center gap-2 text-sm text-gray-700"
+                      >
+                        <input
+                          type="checkbox"
+                          value={tag}
+                          className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
+                          checked={formData.tags.includes(tag)}
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
+                            const isChecked = e.target.checked;
+                            handleTagChange(
+                              isChecked
+                                ? [...formData.tags, tag]
+                                : formData.tags.filter((t) => t !== tag)
+                            );
+                          }}
+                        />
                         {tag}
-                      </option>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
 
                 {/* websiteUrl */}
                 <div className="flex flex-col gap-2">
                   <label
-                    className="text-gray-700 text-sm font-bold"
+                    className="text-gray-700 text-sm font-bold flex items-center gap-1"
                     htmlFor="websiteUrl"
                   >
-                    websiteUrl
+                    Website Url
+                    {formData.isPaidEvent && (
+                      <span className="text-red-500">*</span>
+                    )}
                   </label>
                   <input
                     type="url"
