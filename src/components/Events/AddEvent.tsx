@@ -182,7 +182,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       emails: apiData.emails || [""],
       maxTeamSize: apiData.maxTeamSize || 1,
       isOutsideParticipantAllowed: apiData.isOutsideParticipantAllowed || false,
-      tags: apiData.tags || "",
+      tags: apiData.tags || [""],
       contactNumbers: apiData.phoneNumbers || [""],
       registrationUrl: apiData.registrationUrl || "",
       isPaidEvent: apiData.paid || false,
@@ -486,6 +486,13 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     }));
   };
 
+  const handleTagChange = (newTags: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: newTags,
+    }));
+  };
+
   const handleRemoveEmail = (index: number) => {
     const updatedEmails = formData.emails.filter((_, i) => i !== index);
     setFormData((prev) => ({
@@ -572,6 +579,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       about,
       guidelines,
       eventType,
+      tags,
       fromDate,
       toDate,
       emails,
@@ -761,6 +769,10 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
       return handleError("Transcript URL is required!");
     }
 
+    if (!tags || tags.length === 0) {
+      return handleError("At least one tag is required!");
+    }
+
     // Create FormData
     const formDataToSend = new FormData();
     formDataToSend.append("name", eventName);
@@ -789,7 +801,6 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     // formDataToSend.append("tags[0]", formData.tags.join(","));
     formDataToSend.set("tags[0]", formData.tags.join(","));
 
-
     console.log("tags", formData.tags);
 
     const validEmails = formData.emails.filter((email) => email.trim());
@@ -799,6 +810,9 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     validEmails.forEach((email, index) => {
       formDataToSend.append(`emails[${index}]`, email);
     });
+    // tags.forEach((tag, index) => {
+    //   formDataToSend.append(`tags[${index}]`, tag);
+    // });
     validGuidelines.forEach((g, index) =>
       formDataToSend.append(`guidlines[${index}]`, g)
     );
@@ -1436,23 +1450,28 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                   </label>
 
                   <div className="flex flex-wrap gap-2">
-                    {availableTags.map((tag) => (
-                      <label key={tag} className="flex items-center gap-2">
+                    {availableTags.map((tag: string) => (
+                      <label
+                        key={tag}
+                        className="flex items-center gap-2 text-sm text-gray-700"
+                      >
                         <input
                           type="checkbox"
                           value={tag}
+                          className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
                           checked={formData.tags.includes(tag)}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setFormData((prev) => {
-                              const tags = checked
-                                ? [...prev.tags, tag]
-                                : prev.tags.filter((t) => t !== tag);
-                              return { ...prev, tags };
-                            });
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
+                            const isChecked = e.target.checked;
+                            handleTagChange(
+                              isChecked
+                                ? [...formData.tags, tag]
+                                : formData.tags.filter((t) => t !== tag)
+                            );
                           }}
                         />
-                        <span className="text-sm">{tag}</span>
+                        {tag}
                       </label>
                     ))}
                   </div>
