@@ -6,7 +6,7 @@ import LoadingSpinner from "./Global/LoadingSpinner";
 import { approveEvent, getEventDetails } from "@/api/event";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { updateMetadata } from "@/utils/metadata";
-import {toast} from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 interface Event {
   id: string;
@@ -68,25 +68,23 @@ const MasterAdminEventDetails = () => {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-const fetchEventDetails = async () => {
-  try {
-    const response = await getEventDetails(id!);
-    setEvent(response.data.data);
+  const fetchEventDetails = async () => {
+    try {
+      const response = await getEventDetails(id!);
+      setEvent(response.data.data);
 
-    updateMetadata({
-      title: response.data.data.name,
-      description: response.data.data.about,
-      keywords: `event, ${response.data.data.name}, ${response.data.data.society.name}, nexturday`,
-    });
-  } catch (error) {
-    console.error("Error fetching event details:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      updateMetadata({
+        title: response.data.data.name,
+        description: response.data.data.about,
+        keywords: `event, ${response.data.data.name}, ${response.data.data.society.name}, nexturday`,
+      });
+    } catch (error) {
+      console.error("Error fetching event details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    
-
     fetchEventDetails();
   }, [id]);
 
@@ -165,7 +163,7 @@ const fetchEventDetails = async () => {
             <div className="flex items-center gap-3">
               {event.tags.map((tag, index) => (
                 <div key={index} className="bg-gray-100 px-2 py-1 rounded-lg">
-                  {tag}
+                  {tag.replace(/["[\]]/g, "")}
                 </div>
               ))}
             </div>
@@ -229,10 +227,13 @@ const fetchEventDetails = async () => {
               <p>Entry Fee: {event.paid ? `₹${event.price}` : "Free"}</p>
               <p>Participants: {event.teamCount}</p>
               <p>
-                {event.maxTeamSize == 1 ? "Solo event" : `Team event (group of max. ${event.maxTeamSize})`}
+                {event.maxTeamSize == 1
+                  ? "Solo event"
+                  : `Team event (group of max. ${event.maxTeamSize})`}
               </p>
               <p>
-                Outside Participants: {event.isOutsideParticipantAllowed ? "Allowed" : "Not Allowed"}
+                Outside Participants:{" "}
+                {event.isOutsideParticipantAllowed ? "Allowed" : "Not Allowed"}
               </p>
               {event.registrationUrl && (
                 <p>
@@ -290,18 +291,16 @@ const fetchEventDetails = async () => {
                   </p>
                   <p>
                     <strong>Venue:</strong>{" "}
-                    {subEvent.type === "ONLINE" ? (
-                      "ONLINE"
-                    ) : (
-                      subEvent.venue && (
-                        <a
-                          href={subEvent.venue.mapUrl}
-                          className="text-blue-600 hover:text-blue-800 underline"
-                        >
-                          {subEvent.venue.name}
-                        </a>
-                      )
-                    )}
+                    {subEvent.type === "ONLINE"
+                      ? "ONLINE"
+                      : subEvent.venue && (
+                          <a
+                            href={subEvent.venue.mapUrl}
+                            className="text-blue-600 hover:text-blue-800 underline"
+                          >
+                            {subEvent.venue.name}
+                          </a>
+                        )}
                   </p>
                 </div>
               ))}

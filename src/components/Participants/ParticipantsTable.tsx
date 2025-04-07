@@ -1,27 +1,49 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getParticipants } from "@/api/event";
+import {
+  getParticipants,
+  getEventDetails,
+  updatePaymentStatus,
+} from "@/api/event";
 import LoadingSpinner from "../Global/LoadingSpinner";
 import { updateMetadata } from "@/utils/metadata";
 
 interface ParticipantDetail {
   id: string;
-  name: string;
+  firstname: string;
+  lastname: string;
   branch: string;
   phoneNumber: string;
   whatsappNumber: string;
   studyYear: number;
+  personalEmail: string;
+  participantId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Leader {
+  id: string;
+  uid: string;
+  rollNo: string;
+  universityEmail: string;
+  isKiitStudent: boolean;
+  imageUrl: string;
+  fcmToken: string | null;
+  detail: ParticipantDetail;
 }
 
 interface Participant {
-  participantId: string;
-  participant: {
-    id: string;
-    rollNo: string;
-    email: string;
-    detail: ParticipantDetail;
-  };
+  id: string;
+  name: string;
+  leaderId: string;
+  eventId: string;
   createdAt: string;
+  updatedAt: string;
+  payment_status: string;
+  paymentId: string | null;
+  leader: Leader;
+  members: ParticipantDetail[];
 }
 
 interface PaginationData {
@@ -32,67 +54,101 @@ interface PaginationData {
   data: Participant[];
 }
 
+interface Event {
+  id: string;
+  price: number;
+}
+
 const ParticipantsTable = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [participants, setParticipants] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [eventDetails, setEventDetails] = useState<Event | null>(null);
 
-  // Custom function to convert data to CSV
   const convertToCSV = (data: Participant[]) => {
-    const headers = [
-      "Name",
-      "Roll No",
-      "Branch",
-      "Year",
-      "Contact",
-      "Registration Date",
-      "Registration Time",
-    ];
-    const rows = data.map((participant) => [
-      participant.participant.detail.name,
-      participant.participant.rollNo,
-      participant.participant.detail.branch,
-      participant.participant.detail.studyYear,
-      participant.participant.detail.phoneNumber,
-      new Date(participant.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+    const participantsToInclude =
+      (eventDetails?.price ?? 0) > 0
+        ? data.filter(
+            (participant) => participant.payment_status === "VERIFIED"
+          )
+        : data;
+
+    if (participantsToInclude.length === 0) {
+      return "";
+    }
+
+    const headers = ["Name", "Roll No", "Year", "Registration Date"];
+
+    const rows = participantsToInclude.map((participant) => [
+      `${participant.leader.detail.firstname} ${participant.leader.detail.lastname}`,
+      participant.leader.rollNo,
+      participant.leader.detail.studyYear,
+      new Date(participant.createdAt).toLocaleDateString("en-US"),
     ]);
-    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-    return csvContent;
+
+    return [headers, ...rows].map((e) => e.join(",")).join("\n");
   };
+
   const downloadCSV = () => {
     if (!participants) return;
     const csvContent = convertToCSV(participants.data);
+    if (!csvContent) {
+      const message =
+        (eventDetails?.price ?? 0) > 0
+          ? "No verified participants to download!"
+          : "No participants to download!";
+      alert(message);
+      return;
+    }
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `participants_page_${currentPage}.csv`);
+    const filename =
+      (eventDetails?.price ?? 0) > 0
+        ? `verified_participants_page_${currentPage}.csv`
+        : `all_participants_page_${currentPage}.csv`;
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const handlePaymentStatusUpdate = async (
+    teamId: string,
+    currentStatus: string
+  ) => {
+    const newStatus =
+      currentStatus === "VERIFIED" ? "UNDER_VERIFICATION" : "VERIFIED";
+    try {
+      await updatePaymentStatus(teamId, newStatus);
+      const participantsResponse = await getParticipants(id!, currentPage);
+      setParticipants(participantsResponse.data.data);
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchParticipants = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await getParticipants(id!, currentPage);
-        setParticipants(response.data.data);
+        const [participantsResponse, eventResponse] = await Promise.all([
+          getParticipants(id!, currentPage),
+          getEventDetails(id!),
+        ]);
+        setParticipants(participantsResponse.data.data);
+        setEventDetails(eventResponse.data.data);
+        console.log(participantsResponse);
       } catch (error) {
-        console.error("Error fetching participants:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchParticipants();
+    fetchData();
   }, [id, currentPage]);
 
   useEffect(() => {
@@ -135,87 +191,117 @@ const ParticipantsTable = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* <div className="flex items-center justify-between"> */}
-          <button
-            onClick={() => {
-              navigate(`/events/${id}`);
-            }}
-            className="z-10 flex items-center gap-2 hover:text-white pb-2"
+        <button
+          onClick={() => {
+            navigate(`/events/${id}`);
+          }}
+          className="z-10 flex items-center gap-2 hover:text-white pb-2"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            <span className="text-sm font-medium">Back</span>
-          </button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          <span className="text-sm font-medium">Back</span>
+        </button>
 
-          <h1 className="text-2xl font-bold mb-6">Participants List</h1>
-        {/* </div> */}
+        <h1 className="text-2xl font-bold mb-6">Participants List</h1>
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Roll No
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Branch
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Year
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {(eventDetails?.price ?? 0) > 0 && (
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment Status
+                  </th>
+                )}
+                {(eventDetails?.price ?? 0) > 0 && (
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    
+                  </th>
+                )}
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Registration Date
                 </th>
+                {(eventDetails?.price ?? 0) > 0 && (
+                  <th className="px-6 py-3"></th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {participants.data.map((participant) => (
-                <tr
-                  key={participant.participantId}
-                  className="hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr key={participant.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-sm font-medium text-gray-900">
-                      {participant.participant.detail.name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {participant.participant.email}
+                      {`${participant.leader.detail.firstname} ${participant.leader.detail.lastname}`}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {participant.participant.rollNo}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    {participant.leader.rollNo}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {participant.participant.detail.branch.toUpperCase()}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    {participant.leader.detail.studyYear}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {participant.participant.detail.studyYear}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      Phone: {participant.participant.detail.phoneNumber}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      WhatsApp: {participant.participant.detail.whatsappNumber}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {(eventDetails?.price ?? 0) > 0 && (
+                    <>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            participant.payment_status === "VERIFIED"
+                              ? "bg-green-100 text-green-800"
+                              : participant.payment_status ===
+                                "UNDER_VERIFICATION"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {participant.payment_status === "VERIFIED"
+                            ? "Verified"
+                            : participant.payment_status ===
+                              "UNDER_VERIFICATION"
+                            ? "Under Verification"
+                            : "Unpaid"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() =>
+                            handlePaymentStatusUpdate(
+                              participant.id,
+                              participant.payment_status
+                            )
+                          }
+                          className={`px-2 py-1 rounded-full text-sm font-medium ${
+                            participant.payment_status === "VERIFIED"
+                              ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                              : "bg-green-100 text-green-800 hover:bg-green-200"
+                          }`}
+                        >
+                          {participant.payment_status === "VERIFIED"
+                            ? "Mark Under Verification"
+                            : "Mark Verified"}
+                        </button>
+                      </td>
+                    </>
+                  )}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     {new Date(participant.createdAt).toLocaleDateString()}
                   </td>
                 </tr>
