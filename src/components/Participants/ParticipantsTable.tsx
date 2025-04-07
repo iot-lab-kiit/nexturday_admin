@@ -1,27 +1,46 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getParticipants } from "@/api/event";
+import { getParticipants, getEventDetails } from "@/api/event";
 import LoadingSpinner from "../Global/LoadingSpinner";
 import { updateMetadata } from "@/utils/metadata";
+import { log } from "console";
 
 interface ParticipantDetail {
   id: string;
-  name: string;
+  firstname: string;
+  lastname: string;
   branch: string;
   phoneNumber: string;
   whatsappNumber: string;
   studyYear: number;
+  personalEmail: string;
+  participantId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Leader {
+  id: string;
+  uid: string;
+  rollNo: string;
+  universityEmail: string;
+  isKiitStudent: boolean;
+  imageUrl: string;
+  fcmToken: string | null;
+  detail: ParticipantDetail;
 }
 
 interface Participant {
-  participantId: string;
-  participant: {
-    id: string;
-    rollNo: string;
-    email: string;
-    detail: ParticipantDetail;
-  };
+  id: string;
+  name: string;
+  leaderId: string;
+  eventId: string;
   createdAt: string;
+  updatedAt: string;
+  payment_status: string;
+  paymentId: string | null;
+  leader: Leader;
+  members: ParticipantDetail[];
 }
 
 interface PaginationData {
@@ -32,41 +51,53 @@ interface PaginationData {
   data: Participant[];
 }
 
+interface Event {
+  id: string;
+  price: number;
+}
+
 const ParticipantsTable = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [participants, setParticipants] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [eventDetails, setEventDetails] = useState<Event | null>(null);
 
-  // Custom function to convert data to CSV
   const convertToCSV = (data: Participant[]) => {
-    const headers = [
+    const baseHeaders = [
       "Name",
       "Roll No",
       "Branch",
       "Year",
       "Contact",
+      "Email",
       "Registration Date",
-      "Registration Time",
     ];
-    const rows = data.map((participant) => [
-      participant.participant.detail.name,
-      participant.participant.rollNo,
-      participant.participant.detail.branch,
-      participant.participant.detail.studyYear,
-      participant.participant.detail.phoneNumber,
-      new Date(participant.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    ]);
-    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-    return csvContent;
+
+    const headers = eventDetails?.price
+      ? [...baseHeaders, "Payment Status"]
+      : baseHeaders;
+
+    const rows = data.map((participant) => {
+      const baseRow = [
+        `${participant.leader.detail.firstname} ${participant.leader.detail.lastname}`,
+        participant.leader.rollNo,
+        participant.leader.detail.branch,
+        participant.leader.detail.studyYear,
+        participant.leader.detail.phoneNumber,
+        participant.leader.universityEmail,
+        new Date(participant.createdAt).toLocaleDateString("en-US"),
+      ];
+
+      return eventDetails?.price
+        ? [...baseRow, participant.payment_status]
+        : baseRow;
+    });
+
+    return [headers, ...rows].map((e) => e.join(",")).join("\n");
   };
+
   const downloadCSV = () => {
     if (!participants) return;
     const csvContent = convertToCSV(participants.data);
@@ -80,19 +111,24 @@ const ParticipantsTable = () => {
   };
 
   useEffect(() => {
-    const fetchParticipants = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await getParticipants(id!, currentPage);
-        setParticipants(response.data.data);
+        const [participantsResponse, eventResponse] = await Promise.all([
+          getParticipants(id!, currentPage),
+          getEventDetails(id!),
+        ]);
+        setParticipants(participantsResponse.data.data);
+        setEventDetails(eventResponse.data.data);
+        console.log(participantsResponse);
       } catch (error) {
-        console.error("Error fetching participants:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchParticipants();
+    fetchData();
   }, [id, currentPage]);
 
   useEffect(() => {
@@ -135,31 +171,29 @@ const ParticipantsTable = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* <div className="flex items-center justify-between"> */}
-          <button
-            onClick={() => {
-              navigate(`/events/${id}`);
-            }}
-            className="z-10 flex items-center gap-2 hover:text-white pb-2"
+        <button
+          onClick={() => {
+            navigate(`/events/${id}`);
+          }}
+          className="z-10 flex items-center gap-2 hover:text-white pb-2"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            <span className="text-sm font-medium">Back</span>
-          </button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          <span className="text-sm font-medium">Back</span>
+        </button>
 
-          <h1 className="text-2xl font-bold mb-6">Participants List</h1>
-        {/* </div> */}
+        <h1 className="text-2xl font-bold mb-6">Participants List</h1>
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -170,15 +204,20 @@ const ParticipantsTable = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Roll No
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/*<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Branch
-                </th>
+                </th>*/}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Year
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/*<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Contact
-                </th>
+                </th>*/}
+                {eventDetails && eventDetails.price > 0 && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment Status
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Registration Date
                 </th>
@@ -186,35 +225,46 @@ const ParticipantsTable = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {participants.data.map((participant) => (
-                <tr
-                  key={participant.participantId}
-                  className="hover:bg-gray-50"
-                >
+                <tr key={participant.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {participant.participant.detail.name}
+                      {`${participant.leader.detail.firstname} ${participant.leader.detail.lastname}`}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {participant.participant.email}
-                    </div>
+                    {/*<div className="text-sm text-gray-500">
+                      {participant.leader.universityEmail}
+                    </div>*/}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {participant.participant.rollNo}
+                    {participant.leader.rollNo}
                   </td>
+                  {/*<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {participant.leader.detail.branch.toUpperCase()}
+                  </td>*/}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {participant.participant.detail.branch.toUpperCase()}
+                    {participant.leader.detail.studyYear}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {participant.participant.detail.studyYear}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/*<td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      Phone: {participant.participant.detail.phoneNumber}
+                      Phone: {participant.leader.detail.phoneNumber}
                     </div>
                     <div className="text-sm text-gray-500">
-                      WhatsApp: {participant.participant.detail.whatsappNumber}
+                      WhatsApp: {participant.leader.detail.whatsappNumber}
                     </div>
-                  </td>
+                  </td>*/}
+                  {(eventDetails?.price ?? 0) > 0 && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${
+                          participant.payment_status === "PAID"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {participant.payment_status}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(participant.createdAt).toLocaleDateString()}
                   </td>
