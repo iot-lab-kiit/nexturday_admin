@@ -6,23 +6,27 @@ import LoadingSpinner from "../Global/LoadingSpinner";
 import { getEventDetails } from "@/api/event";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { updateMetadata } from "@/utils/metadata";
+import { MdComputer } from "react-icons/md";
 
 interface Event {
   id: string;
   about: string;
   createdAt: string;
-  isOutsideParticipantsAllowed: string;
+  isOutsideParticipantAllowed: string;
   emails: string[];
   guidlines: string[];
   images: { url: string }[];
   name: string;
   paid: boolean;
   participationCount: number;
+  maxTeamSize: number;
   phoneNumbers: string[];
   price: number;
   registrationUrl: string;
-  transcriptUrl: string;
-  eventTags: string[];
+  websiteUrl: string;
+  transcript: string;
+  paymentQrUrl: string;
+  tags: string[];
   society: {
     name: string;
   };
@@ -78,7 +82,7 @@ const EventDetails = () => {
   }
 
   console.log(event);
-  
+  // console.log(event.paymentQrUrl);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -173,7 +177,18 @@ const EventDetails = () => {
 
           <div className="bg-gray-50 rounded-lg p-4">
             <h2 className="text-xl font-semibold mb-3">About</h2>
-            <p className="text-gray-700">{event.about}</p>
+            <p className="text-gray-700">
+              <span className="text-gray-900 font-medium">
+                Event Description:{" "}
+              </span>
+              {event.about}
+            </p>
+
+            <p className="text-gray-700">
+  <span className="text-gray-900 font-medium">Event Type: </span>
+  {event.tags.join(', ')}
+</p>
+
           </div>
 
           <div className="bg-gray-50 rounded-lg p-4">
@@ -211,6 +226,15 @@ const EventDetails = () => {
                 </svg>
                 {event.phoneNumbers.join(", ")}
               </p>
+              {
+                event.websiteUrl && (
+                  <p className="flex items-center gap-2">
+                    <MdComputer className="w-5 h-5 text-gray-600" />
+                    {event.websiteUrl}
+                    </p>
+                )
+                
+              }
             </div>
           </div>
 
@@ -228,8 +252,14 @@ const EventDetails = () => {
             <div className="space-y-2">
               <p>Entry Fee: {event.paid ? `₹${event.price}` : "Free"}</p>
               <p>Participants: {event.participationCount}</p>
-              {/* <p>Outside Participant: {event.isOutsideParticipantsAllowed}</p> */}
-              {event.isOutsideParticipantsAllowed === "true" ? (
+              <p>Team size: {event.maxTeamSize}</p>
+              {/* <p>Outside Participant: {event.isOutsideParticipantAllowed}</p> */}
+              {/* {event.isOutsideParticipantAllowed === "false" ? (
+                <p>Outside Participant is not allowed</p>
+              ) : (
+                <p>Outside Participant is allowed</p>
+              )} */}
+              {event.isOutsideParticipantAllowed ? (
                 <p>Outside Participant is allowed</p>
               ) : (
                 <p>Outside Participant is not allowed</p>
@@ -247,20 +277,21 @@ const EventDetails = () => {
                   </a>
                 </p>
               )}
+
             </div>
           </div>
 
           {/* transcript url */}
-          {event.transcriptUrl && (
+          {event.transcript && (
             <div className="bg-gray-50 rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-3">Transcript</h2>
+              <h2 className="text-xl font-semibold mb-3">Transcript URL</h2>
               <a
-                href={event.transcriptUrl}
+                href={event.transcript}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 underline"
               >
-                {event.transcriptUrl}
+                {event.transcript}
               </a>
             </div>
           )}
