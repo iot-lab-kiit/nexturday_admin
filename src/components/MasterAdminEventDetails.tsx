@@ -3,7 +3,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import LoadingSpinner from "./Global/LoadingSpinner";
-import { approveEvent, getEventDetails } from "@/api/event";
+import { approveEvent, getEventDetails, rejectEvent } from "@/api/event";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { updateMetadata } from "@/utils/metadata";
 import { toast } from "react-hot-toast";
@@ -101,18 +101,15 @@ const MasterAdminEventDetails = () => {
   }
 
   const handleApprove = async () => {
-    try {
-      if (id) {
-        await approveEvent(id);
-      } else {
-        toast.error("Event ID is missing");
-      }
-      toast.success("Event approved successfully");
-      fetchEventDetails();
-    } catch (error) {
-      console.error("Error approving event:", error);
-      toast.error("Failed to approve event");
-    }
+  // e.stopPropagation();
+       try {
+         await rejectEvent(eventId);
+         toast.success("Event rejected successfully");
+        // fetchEvent();
+       } catch (error) {
+         console.error("Error rejecting event:", error);
+         toast.error("Failed to reject event");
+       }
   };
 
   return (
