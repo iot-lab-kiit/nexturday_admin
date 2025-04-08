@@ -101,15 +101,33 @@ const MasterAdminEventDetails = () => {
   }
 
   const handleApprove = async () => {
-  // e.stopPropagation();
-       try {
-         await rejectEvent(eventId);
-         toast.success("Event rejected successfully");
-        // fetchEvent();
-       } catch (error) {
-         console.error("Error rejecting event:", error);
-         toast.error("Failed to reject event");
-       }
+    try {
+      if (id) {
+        await approveEvent(id);
+      } else {
+        toast.error("Event ID is missing");
+      }
+      toast.success("Event approved successfully");
+      fetchEventDetails();
+    } catch (error) {
+      console.error("Error approving event:", error);
+      toast.error("Failed to approve event");
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      if (id) {
+        await rejectEvent(id);
+      } else {
+        toast.error("Event ID is missing");
+      }
+      toast.success("Event rejected successfully");
+      fetchEventDetails();
+    } catch (error) {
+      console.error("Error rejecting event:", error);
+      toast.error("Failed to reject event");
+    }
   };
 
   return (
@@ -327,16 +345,22 @@ const MasterAdminEventDetails = () => {
               View Participants
             </button>
             <button
-              onClick={() => handleApprove()}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              onClick={() =>
+                event.isApproved ? handleReject() : handleApprove()
+              }
+              className={`px-6 py-3 ${
+                event.isApproved
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              } text-white rounded-lg transition-colors flex items-center gap-2`}
             >
               <Icon
-                icon="typcn:tick-outline"
+                icon={event.isApproved ? "mdi:close" : "typcn:tick-outline"}
                 width="24"
                 height="24"
                 style={{ color: "#fff" }}
               />
-              Approve Event
+              {event.isApproved ? "Reject Event" : "Approve Event"}
             </button>
           </div>
         </div>

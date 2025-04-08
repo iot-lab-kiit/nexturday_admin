@@ -170,9 +170,7 @@ const MasterAdminParticipantsTable = () => {
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <button
-          onClick={() => {
-            navigate(`/events/${id}`);
-          }}
+          onClick={() => window.history.back()}
           className="z-10 flex items-center gap-2 hover:text-white pb-2"
         >
           <svg
