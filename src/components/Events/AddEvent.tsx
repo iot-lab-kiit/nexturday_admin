@@ -23,7 +23,15 @@ import {
   AddEventProps,
 } from "../../types";
 
-const availableTags = ["Cultural", "Tech", "Fun", "Workshop", "Hackathon"];
+const availableTags = [
+  "cultural",
+  "competition",
+  "fashion",
+  "workshop",
+  "seminar",
+  "tech",
+  "others",
+];
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
@@ -64,7 +72,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     about: "",
     guidelines: [""],
     eventType: "ONLINE",
-    tags: [],
+    tags: [""],
     fromDate: "",
     toDate: "",
     websiteUrl: "",
@@ -131,6 +139,18 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
             ...prev,
             tags: tagsArray,
           }));
+
+          //set tags
+          const normalizedTags = Array.isArray(transformedData.tags)
+            ? transformedData.tags
+            : (transformedData.tags as string)
+                .split(",")
+                .map((tag) => tag.trim());
+          setFormData((prev) => ({
+            ...prev,
+            tags: normalizedTags,
+          }));
+
           setFormData(transformedData);
           console.log("transformedData", transformedData);
         } catch (error) {
@@ -799,7 +819,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
     // formDataToSend.append("tags[0]", formData.tags.toString());
     // formDataToSend.set("tags[0]", formData.tags.join(","));
     // formDataToSend.append("tags[0]", formData.tags.join(","));
-    formDataToSend.set("tags[0]", formData.tags.join(","));
+    formDataToSend.set("tags", formData.tags.join(","));
 
     console.log("tags", formData.tags);
 
@@ -1453,12 +1473,11 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                     {availableTags.map((tag: string) => (
                       <label
                         key={tag}
-                        className="flex items-center gap-2 text-sm text-gray-700"
+                        className="flex items-center gap-2 text-lg text-gray-700"
                       >
                         <input
                           type="checkbox"
                           value={tag}
-                          className="w-5 h-5 text-blue-500 focus:ring focus:ring-blue-200 focus:outline-none"
                           checked={formData.tags.includes(tag)}
                           onChange={(
                             e: React.ChangeEvent<HTMLInputElement>
@@ -1471,6 +1490,7 @@ const AddEvent: React.FC<AddEventProps> = ({ isEditing }) => {
                             );
                           }}
                         />
+
                         {tag}
                       </label>
                     ))}
