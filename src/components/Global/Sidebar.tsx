@@ -43,32 +43,21 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-[10vh] p-4 mx-2 space-y-4">
         {/* Header */}
         <div
-          className="relative m-auto p-4 w-[full] h-[15vh] bg-cover bg-center bg-no-repeat rounded-lg shadow-inner flex items-start flex-col"
+          className="relative m-auto p-2 md:p-4 w-full h-[15vh] bg-cover bg-center bg-no-repeat rounded-lg shadow-inner flex items-start flex-col"
           style={{
             backgroundImage:
               "url('https://i0.wp.com/backgroundabstract.com/wp-content/uploads/edd/2022/01/vecteezy_abstract-blue-and-orange-wave-business-background_-e1656072952998.jpg?resize=1000%2C750&ssl=1')",
           }}
         >
-          <p className="text-slate-900 text-xl font-bold px-2  rounded-md ">
+          <p className="text-slate-900 text-md md:text-xl text-center font-bold px-0 md:px-2 rounded-md break-words w-full">
             {userName || "Society"}
           </p>
-          <p className="text-slate-900 text-center text-sm px-2">
+          <p className="text-slate-900 text-center text-sm px-0 md:px-2 break-words w-full">
             {userEmail || ""}
           </p>
         </div>
 
-        {/* Business Card Section */}
-
-        {/* User Email */}
-
         <div className="w-full mb-2 text-xl font-semibold">
-          {/* <div
-              onClick={() => setSelectedTab("societies")}
-              className="flex flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
-            >
-              <MdGroups />
-              <p>My Society</p>
-            </div> */}
           <div
             onClick={() => setSelectedTab("events")}
             className="flex  flex-row justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer"
@@ -85,17 +74,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </div>
-
-      {/* <Separator /> */}
     </div>
-    {/* <Separator /> */}
     <div className="flex flex-row font-semibold justify-center gap-2 items-center py-2 px-2 rounded-lg hover:text-gray-400 cursor-pointer mx-auto">
       <UserRoundPen className="text-sm" />
       <p onClick={() => navigate("/update-profile")} className="py-1 mx-auto">
         Edit Profile
       </p>
     </div>
-    {/* <Separator /> */}
 
     {isLoggedin ? (
       <div
