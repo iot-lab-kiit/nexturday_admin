@@ -1,9 +1,7 @@
-import { firestore } from "@/lib/firebase";
-import { collection, doc } from "firebase/firestore";
+
 import React, { useState, useEffect, useRef } from "react";
 import { IoMdPerson } from "react-icons/io";
-import { useParams } from "react-router";
-import { getDocs } from "firebase/firestore";
+
 
 type Message = {
   id: string;
@@ -16,12 +14,12 @@ type ChatWindowProps = {
   messages: Message[];
 };
 
-type Announcement = {
-  id: string;
-  sender: string;
-  text: string;
-  timestamp: string; 
-}
+// type Announcement = {
+//   id: string;
+//   sender: string;
+//   text: string;
+//   timestamp: string;
+// }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
   messages: initialMessages,
@@ -48,17 +46,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-   const params = useParams()
+   // const params = useParams()
   // console.log( params.id)
 
-  useEffect (()=>{
-    const eventsCol = collection(firestore,"events");
-    const eventDoc =  doc(eventsCol,params.id)
-    const announcementsCol = collection(eventDoc,"announcements")
-    getDocs(announcementsCol).then((snap)=>{
-      setAnnouncements(snap.docs as unknown as Announcement[])
-    })
-  },[])
+  // useEffect (()=>{
+    // const eventsCol = collection(firestore,"events");
+    // const eventDoc =  doc(eventsCol,params.id)
+    // const announcementsCol = collection(eventDoc,"announcements")
+    // getDocs(announcementsCol).then((snap)=>{
+    //   setAnnouncements(snap.docs as unknown as Announcement[])
+    // })
+  // },[])
 
  
 

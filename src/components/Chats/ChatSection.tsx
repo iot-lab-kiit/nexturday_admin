@@ -38,7 +38,7 @@ export const ChatSection: React.FC = () => {
   return (
     <div className="chat-section grid grid-cols-3 gap-4 p-4 h-screen w-full">
       <div className="chat-list-container col-span-1">
-        <ChatList chats={mockChats} onSelectChat={handleSelectChat}/>
+        <ChatList chats={mockChats} onSelectChat={handleSelectChat} selectedChatId={null}/>
       </div>
       <div className="chat-window-container col-span-2 flex flex-col">
         {selectedChatId ? (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getParticipants, getEventDetails } from "@/api/event";
 import LoadingSpinner from "./Global/LoadingSpinner";
 import { updateMetadata } from "@/utils/metadata";
@@ -56,7 +56,6 @@ interface PaginationData {
 }
 
 const MasterAdminParticipantsTable = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
   const [participants, setParticipants] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(true);

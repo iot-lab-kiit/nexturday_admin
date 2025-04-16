@@ -187,7 +187,7 @@ const EventsChecked = () => {
     setCurrentPage(newPage);
   };
 
-  const handleReject = async (e, eventId: string) => {
+  const handleReject = async (e: { preventDefault: () => void; }, eventId: string) => {
     e.preventDefault();
     try {
       await rejectEvent(eventId);
