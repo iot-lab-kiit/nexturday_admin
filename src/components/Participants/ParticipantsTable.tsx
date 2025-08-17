@@ -79,7 +79,7 @@ const ParticipantsTable = () => {
       return "";
     }
 
-    const headers = ["Name", "Roll No", "Year", "Registration Date"];
+    const headers = ["Name", "Roll-No", "Year", "Registration-Date"];
 
     const rows = participantsToInclude.map((participant) => [
       `${participant.leader.detail.firstname} ${participant.leader.detail.lastname}`,

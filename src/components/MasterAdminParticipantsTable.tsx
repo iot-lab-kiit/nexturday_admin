@@ -63,15 +63,26 @@ const MasterAdminParticipantsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventDetails, setEventDetails] = useState<Event | null>(null);
 
+  // Helper to escape CSV fields
+  const escapeCSV = (field: any) => {
+    if (field === null || field === undefined) return "";
+    const str = String(field);
+    // If field contains comma, quote, or newline, wrap in quotes and escape quotes
+    if (/[",\n]/.test(str)) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
   const convertToCSV = (data: Participant[]) => {
     const baseHeaders = [
       "Name",
-      "Roll No",
+      "Roll-No",
       "Branch",
       "Year",
       "Contact",
       "Email",
-      "Registration Date",
+      "Registration-Date",
     ];
 
     const headers = eventDetails?.price
@@ -94,7 +105,11 @@ const MasterAdminParticipantsTable = () => {
         : baseRow;
     });
 
-    return [headers, ...rows].map((e) => e.join(",")).join("\n");
+    // Escape all fields
+    const csvRows = [headers, ...rows].map((row) =>
+      row.map(escapeCSV).join(",")
+    );
+    return csvRows.join("\n");
   };
 
   const downloadCSV = () => {
@@ -255,7 +270,7 @@ const MasterAdminParticipantsTable = () => {
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                         ${
-                          participant.payment_status === "PAID"
+                          participant.payment_status === "VERIFIED"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}

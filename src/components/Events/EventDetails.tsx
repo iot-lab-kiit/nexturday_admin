@@ -315,7 +315,7 @@ const EventDetails = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <h2 className="text-xl font-semibold mb-3">Sub Event Details</h2>
               {event.details.map((subEvent, index) => (
-                <div key={index} className="space-y-2">
+                <div key={index} className="space-y-2 border-b pb-4 mb-4">
                   <h3 className="text-lg font-bold">{subEvent.name}</h3>
                   <p>{subEvent.about}</p>
                   <p>
@@ -329,10 +329,27 @@ const EventDetails = () => {
                   <p>
                     <strong>Type:</strong> {subEvent.type}
                   </p>
-                  <p>
-                    <strong>Venue:</strong>{" "}
-                    {subEvent.type == "ONLINE" ? "ONLINE" : subEvent.venue}
-                  </p>
+                  {subEvent.type === "ONLINE" ? (
+                    ""
+                  ) : (
+                    <p>
+                      <strong>Venue:</strong>{" "}
+                      <a
+                        target="_blank"
+                        href={subEvent?.venue?.mapUrl}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {subEvent.type === "ONLINE"
+                          ? "ONLINE"
+                          : subEvent.venue
+                          ? typeof subEvent.venue === "object"
+                            ? subEvent.venue?.name ||
+                              JSON.stringify(subEvent.venue)
+                            : subEvent.venue
+                          : "N/A"}
+                      </a>
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
