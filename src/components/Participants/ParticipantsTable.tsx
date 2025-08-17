@@ -79,7 +79,7 @@ const ParticipantsTable = () => {
       return "";
     }
 
-    const headers = ["Name", "Roll No", "Year", "Registration Date"];
+    const headers = ["Name", "Roll-No", "Year", "Registration-Date"];
 
     const rows = participantsToInclude.map((participant) => [
       `${participant.leader.detail.firstname} ${participant.leader.detail.lastname}`,
@@ -233,9 +233,14 @@ const ParticipantsTable = () => {
                   </th>
                 )}
                 {(eventDetails?.price ?? 0) > 0 && (
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    
-                  </th>
+                  <>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Payment ID
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Update Status
+                    </th>
+                  </>
                 )}
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Registration Date
@@ -259,11 +264,12 @@ const ParticipantsTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     {participant.leader.detail.studyYear}
                   </td>
+
                   {(eventDetails?.price ?? 0) > 0 && (
                     <>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             participant.payment_status === "VERIFIED"
                               ? "bg-green-100 text-green-800"
                               : participant.payment_status ===
@@ -280,6 +286,9 @@ const ParticipantsTable = () => {
                             : "Unpaid"}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        {participant.paymentId}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <button
                           onClick={() =>
@@ -288,7 +297,7 @@ const ParticipantsTable = () => {
                               participant.payment_status
                             )
                           }
-                          className={`px-2 py-1 rounded-full text-sm font-medium ${
+                          className={`px-2 py-1 hover:scale-105 transition-all rounded-full text-sm font-medium ${
                             participant.payment_status === "VERIFIED"
                               ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                               : "bg-green-100 text-green-800 hover:bg-green-200"

@@ -33,8 +33,8 @@ const EventCard = ({
           </div>
         </div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-auto w-fit text-3xl font-bold pt-3">{event.name}</h1>
-          <div className="text-center text-base leading-tight">
+          <h1 className="m-auto w-fit text-3xl font-bold pt-3 line-clamp-1">{event.name}</h1>
+          <div className="text-justify line-clamp-5 text-base leading-tight">
             {event.about}
           </div>
           <div>

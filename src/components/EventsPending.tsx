@@ -120,8 +120,8 @@ const EventCard = ({ event, handleApprove, handleReject }: EventCardProps) => {
           <div className="bg-gray-400 w-full aspect-video absolute top-0 left-0 rounded-lg z-10"></div>
         </div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-auto w-fit text-3xl font-bold pt-3">{event.name}</h1>
-          <div className="text-center text-base leading-tight">
+          <h1 className="m-auto w-fit line-clamp-1 text-3xl font-bold pt-3">{event.name}</h1>
+          <div className="text-center line-clamp-5 text-base leading-tight">
             {event.about}
           </div>
           <div>

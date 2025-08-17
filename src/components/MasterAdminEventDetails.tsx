@@ -290,7 +290,7 @@ const MasterAdminEventDetails = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <h2 className="text-xl font-semibold mb-3">Sub Event Details</h2>
               {event.details.map((subEvent, index) => (
-                <div key={index} className="space-y-2">
+                <div key={index} className="space-y-2 border-b pb-4 mb-4">
                   <h3 className="text-lg font-bold">{subEvent.name}</h3>
                   <p>{subEvent.about}</p>
                   <p>
