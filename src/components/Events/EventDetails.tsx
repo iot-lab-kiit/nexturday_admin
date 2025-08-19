@@ -12,6 +12,7 @@ interface Event {
   id: string;
   about: string;
   createdAt: string;
+  deadline: string;
   isOutsideParticipantAllowed: string;
   emails: string[];
   guidlines: string[];
@@ -142,7 +143,7 @@ const EventDetails = () => {
                 />
               </svg>
               <span>
-                {new Date(event.createdAt).toLocaleDateString("en-US", {
+                {new Date(event.deadline).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
